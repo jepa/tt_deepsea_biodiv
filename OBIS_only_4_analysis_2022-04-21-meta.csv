@@ -1,0 +1,62 @@
+column,name,value,notes
+1,rec,integer,record row number
+2,layer,character,info on where record falling in CCZ shapefile
+3,inclusion_criteria,character,notes for review of record inclusion criteria from march 2022 data checking
+4,inc_notes_mar2022,character,notes for review of record inclusion criteria from march 2022 data checking
+5,include,character,yes/no on whether to include record
+6,taxon_note,character,note on taxonomy - e.g. if error in name i.e accepted scientific name is not accepted in Worms
+7,scientificName_ed,character,edited scientific name
+8,DD_record,logical,note if record is from DeepData
+9,date_year,integer,extracted date/year info
+10,year,integer,year extracted from date
+11,ScientificName_accepted,character,accepted name via WoRMS taxon match
+12,qualif_ed,character,identification qualifier edited i.e. added where blank but recorded with verbatimScientifcName
+13,TR_w_TCID,character,"taxon rank of name but where name was a morphospecies, entry is 'taxonConceptID' ie Darwin core term for morphospecies/open nomenclatureplus morphospecies"
+14,CCZ_endemic,character,recorded if species is described from CCZ
+15,other_rank,character,recorded if taxon rank other than main ones ie. If sup-super etc
+16,taxonRank_ed,character,taxon rank edited to be accurate (errors evident)
+17,Authority,character,authority from WoRMs
+18,AphiaID_accepted,integer,aphia ID from WoRMs
+19,occurrenceID,character,
+20,occurrenceID_ed,character,edited so no duplicates in occurrenceID (relates to DeepData records only)
+21,scientificName,character,from this field on- all fields= original ones from OBIS Darwin Core DwC output (all are Darwin Core terms)
+22,decimalLatitude,numeric,
+23,originalScientificName,character,
+24,basisOfRecord,character,
+25,minimumDepthInMeters,numeric,
+26,maximumDepthInMeters,numeric,
+27,depth,numeric,
+28,id,character,
+29,class,character,
+30,order,character,
+31,family,character,
+32,decimalLongitude,numeric,
+33,kingdom,character,
+34,phylum,character,
+35,rightsHolder,logical,
+36,institutionID,logical,
+37,individualCount,integer,
+38,type,character,
+39,catalogNumber,character,
+40,samplingProtocol,character,
+41,eventID,character,
+42,taxonRank,character,
+43,eventTime,character,
+44,taxonomicStatus,logical,
+45,verbatimDepth,logical,
+46,locationID,logical,
+47,accessRights,logical,
+48,habitat,character,
+49,recordedBy,character,
+50,identifiedBy,character,
+51,taxonRemarks,character,
+52,genus,character,
+53,species,character,
+54,subclass,character,
+55,taxonConceptID,character,
+56,identificationQualifier,character,
+57,previousIdentifications,logical,
+58,institutionCode,character,
+59,recordNumber,character,
+60,datasetName,character,
+61,associatedSequences,character,
