@@ -1,6 +1,7 @@
 library(vegan)
 library(tidyverse)
 library(iNEXT)
+library(ggthemes)
 theme_set(ggthemes::theme_few(base_size = 12))
 
 # -----------------------------------------------------------------------------------------------------------------
