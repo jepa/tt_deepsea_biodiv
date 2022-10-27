@@ -1,7 +1,7 @@
 library(vegan)
 library(tidyverse)
 library(iNEXT)
-theme_set(theme_linedraw(base_size = 12))
+theme_set(ggthemes::theme_few(base_size = 12))
 
 # -----------------------------------------------------------------------------------------------------------------
 # Data import
@@ -19,7 +19,6 @@ ggplot(species_descriptions, aes(x = Year)) +
       geom_line(aes(y = cumul_spp, colour = "cumul_spp"), size = 1) +
       geom_line(aes(y = cumul_pubs, colour = "cumul_pubs"), size = 1) +
       labs(x = "Year", y = "Cumulative totals") +
-      #  ggtitle("Cumulative totals of publications and descriptions (year 2000- 2021)") +
       theme(legend.position = "none") +
       scale_colour_manual("", 
                           breaks = c("cumul_desc", "cumul_spp", "cumul_pubs"),
@@ -36,14 +35,14 @@ sample_based_accum <- ggplot(specaccum_df) +
       geom_ribbon(aes(sites, ymin = richness-sd, ymax = richness + sd), alpha = .3, fill = 'blue') +
       geom_line(aes(sites, richness)) +
       xlab("Number of samples") +
-      ylab("Species richness") +
-      theme(legend.title = element_blank(),
-            legend.position = c(.9, .5)); sample_based_accum
+      ylab("Species richness"); sample_based_accum
 
 
 # -----------------------------------------------------------------------------------------------------------------
 # Figure: Rarefaction curves
 # -----------------------------------------------------------------------------------------------------------------
+# Overall estimate for CZZ
+
 ggiNEXT(i.out, type = 3)
 
 
