@@ -7,7 +7,7 @@ theme_set(ggthemes::theme_few(base_size = 12))
 # -----------------------------------------------------------------------------------------------------------------
 # Data import
 # -----------------------------------------------------------------------------------------------------------------
-species_descriptions <- read.csv("TEMP_papers_table_1980_on_2022-09-21.csv")  # Missing
+species_descriptions <- read.csv("TEMP_papers_table_1980_on_2022-09-21.csv")  # NEEDS UPDATING
 community_matrix <- read.table('data-processed/CCZ_community_matrix.txt')
 specaccum_df <- read.csv('data-processed/CCZ_specaccum.csv')
 load('data-processed/iNEXT_abundance.RData')
