@@ -46,4 +46,13 @@ sample_based_accum <- ggplot(specaccum_df) +
 
 ggiNEXT(i.out, type = 3)
 
+# rarefy from vegan- test
+
+S <- specnumber(community_matrix)
+raremax <- min(rowSums(community_matrix))
+Srare <- rarefy(community_matrix, raremax)
+plot(S, Srare, xlab = "Observed No. of Species", ylab = "Species")
+abline(0, 1)
+rarecurve(community_matrix, step = 20, sample = raremax)
+
 
