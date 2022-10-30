@@ -79,7 +79,7 @@ specaccum_df <-  data.frame(sites = specaccum_result$sites, richness = specaccum
 # Export
 # -----------------------------------------------------------------------------------------------------------------
 write.table(community_matrix, file = 'data-processed/CCZ_community_matrix.txt')
-write.table(com_matrix_standardised, file = 'data-processed/CCZ_com_matrix_standardised.txt')  # Some strange characters causing error, need to clean data
+save(com_matrix_standardised, file = 'data-processed/CCZ_com_matrix_standardised.RData')  
 
 write.csv(specaccum_df, file = 'data-processed/CCZ_specaccum.csv')
 writeOGR(intersectGrid, dsn = 'data-processed', layer = 'CCZ_grid_5degree', driver = "ESRI Shapefile")
