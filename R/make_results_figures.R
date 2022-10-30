@@ -7,7 +7,8 @@ theme_set(ggthemes::theme_few(base_size = 12))
 # -----------------------------------------------------------------------------------------------------------------
 # Data import
 # -----------------------------------------------------------------------------------------------------------------
-species_descriptions <- read.csv("TEMP_papers_table_1980_on_2022-09-21.csv")  # NEEDS UPDATING
+species_descriptions <- read.csv("data-raw/TEMP_papers_table_1980_on_2022-09-21.csv") %>% 
+      pivot_longer(cols = 6:8, names_to = "var", values_to = "number")
 community_matrix <- read.table('data-processed/CCZ_community_matrix.txt')
 specaccum_df <- read.csv('data-processed/CCZ_specaccum.csv')
 load('data-processed/iNEXT_abundance.RData')
@@ -15,17 +16,18 @@ load('data-processed/iNEXT_abundance.RData')
 # -----------------------------------------------------------------------------------------------------------------
 # Figure: Raw data
 # -----------------------------------------------------------------------------------------------------------------
-ggplot(species_descriptions, aes(x = Year)) +
-      geom_line(aes(y = cumul_desc, colour = "cumul_desc"), size = 1) +
-      geom_line(aes(y = cumul_spp, colour = "cumul_spp"), size = 1) +
-      geom_line(aes(y = cumul_pubs, colour = "cumul_pubs"), size = 1) +
+descriptions_figure <- ggplot(species_descriptions, aes(x = Year, y = number, colour = var, fill = var)) +
+      geom_line(size = 1) +
       labs(x = "Year", y = "Cumulative totals") +
-      theme(legend.position = "none") +
-      scale_colour_manual("", 
+      theme(legend.justification = c(0, 1), 
+            legend.position = c(0, 1),
+            legend.box.margin=margin(c(50, 50, 50, 50)))+
+      scale_colour_colorblind("", 
                           breaks = c("cumul_desc", "cumul_spp", "cumul_pubs"),
-                          values = c("black", "coral2", "steelblue"),
                           labels = c("all descriptions", "new species", " publications"))
 
+ggsave(descriptions_figure, filename = 'output-figures/descriptions_figure.jpg', 
+       width = 15, height = 15, units = 'cm', dpi = 150)
 
 
 
