@@ -18,12 +18,8 @@ community_matrix <- community_matrix[!rownames(community_matrix) %in% empty_site
 # Check for non-numeric columns
 length(names(sapply(community_matrix, is.numeric))) == length(colnames(community_matrix))
 
-# Species curve data
-specaccum_result <- specaccum(community_matrix, method = 'random', permutations = 100)  
-specaccum_df <-  data.frame(sites = specaccum_result$sites, richness = specaccum_result$richness, sd = specaccum_result$sd)
-
-# iNEXT data
-i.out <- iNEXT(community_matrix, q = 0, datatype = "abundance")
+# # iNEXT data
+# i.out <- iNEXT(community_matrix, q = 0, datatype = "abundance")
 
 # Species data with coords etc.
 data_coords <- read.csv('data-raw/TEMP_SPECIES_ALL_v3_2022-09-22.csv') %>% 
@@ -62,12 +58,27 @@ points_intersected <- data.frame(point.in.poly(sites_spdf, intersectGrid)) %>%
 
 data_merged <- merge(points_intersected, data_coords, by = c("site_ID", "long", "lat"), all.y = T)
 
+# Community matrix by grid, standardised abundance
+com_matrix_standardised <- data_merged %>% 
+      dplyr::group_by(grid_ID, NAME) %>% 
+      dplyr::summarise(cover = sum(individualCount)/pseudo_effort) %>%  
+      unique() %>% 
+      reshape::cast(.,  grid_ID ~ NAME, value = "cover")
+com_matrix_standardised[is.na(com_matrix_standardised)] <-  0
+rownames(com_matrix_standardised) <- com_matrix_standardised$grid_ID
+
+# Species curve data
+specaccum_result <- specaccum(community_matrix, method = 'random', permutations = 100)  
+specaccum_df <-  data.frame(sites = specaccum_result$sites, richness = specaccum_result$richness, sd = specaccum_result$sd)
+
 
 # Export
 write.table(community_matrix, file = 'data-processed/CCZ_community_matrix.txt')
+write.table(com_matrix_standardised, file = 'data-processed/CCZ_com_matrix_standardised.txt')  # Some strange characters causing error, need to clea data
+
 write.csv(specaccum_df, file = 'data-processed/CCZ_specaccum.csv')
 writeOGR(intersectGrid, dsn = 'data-processed', layer = 'CCZ_grid_5degree', driver = "ESRI Shapefile")
-save(i.out, file = 'data-processed/iNEXT_abundance.RData')
+# save(i.out, file = 'data-processed/iNEXT_abundance.RData')
 write.csv(data_merged, file = 'data-processed/CCZ_specdata_pseudoeffort.csv')
 
 
