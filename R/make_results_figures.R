@@ -29,8 +29,6 @@ descriptions_figure <- ggplot(species_descriptions, aes(x = Year, y = number, co
 ggsave(descriptions_figure, filename = 'output-figures/descriptions_figure.jpg', 
        width = 15, height = 15, units = 'cm', dpi = 150)
 
-
-
 # -----------------------------------------------------------------------------------------------------------------
 # Figure: Family/species accumulation by sampling effort
 # -----------------------------------------------------------------------------------------------------------------
@@ -40,21 +38,10 @@ sample_based_accum <- ggplot(specaccum_df) +
       xlab("Number of samples") +
       ylab("Species richness"); sample_based_accum
 
-
 # -----------------------------------------------------------------------------------------------------------------
 # Figure: Rarefaction curves
 # -----------------------------------------------------------------------------------------------------------------
 # Overall estimate for CZZ
 
-ggiNEXT(i.out, type = 3)
-
-# rarefy from vegan- test
-
-S <- specnumber(community_matrix)
-raremax <- min(rowSums(community_matrix))
-Srare <- rarefy(community_matrix, raremax)
-plot(S, Srare, xlab = "Observed No. of Species", ylab = "Species")
-abline(0, 1)
-rarecurve(community_matrix, step = 20, sample = raremax)
 
 

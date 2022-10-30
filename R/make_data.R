@@ -45,6 +45,3 @@ writeOGR(intersectGrid, dsn = 'data-processed', layer = 'CCZ_grid_5degree', driv
 save(i.out, file = 'data-processed/iNEXT_abundance.RData')
 
 
-
-test <- iNEXT::ChaoRichness(community_matrix, datatype = "abundance", conf = 0.95)
-test <- rowSums(community_matrix)
