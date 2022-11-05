@@ -96,3 +96,27 @@ fitted <- predict(lm(data$log ~ data$order))
 
 data$order[7];data$log[7]
 order[7];log[7]; data = data
+
+
+# -----------------------------------------------------------------------------------------------------------------
+# scrappy notes for iNEXT
+
+## transposed input file
+
+com_matT <- t(com_mat)
+
+## richness estimates
+test <- ChaoRichness((com_matT))
+
+## full version- q nos 0-5, bootstrap at 100 (will take ages to run- set up for overnight)
+Hills_q <- iNEXT(com_matT, q=0, datatype = "abundance", nboot = 2)
+# Hills_q <- iNEXT(com_matT, q=c(0,1,2,3,4,5), datatype = "abundance", nboot = 100)
+# saveRDS(Hills_q, "Hills_q-5_orders.rds")
+# Hills_q <- readRDS("Hills_q-5_orders.rds")
+# Hills_df <- bind_rows(Hills_q$iNextEst, .id="site")
+
+# plot
+ggiNEXT(Hills_q, type=1)
+
+plot_q <- ggiNEXT(Hills_q, type=1)+
+   theme_clean()
