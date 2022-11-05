@@ -59,48 +59,7 @@ sample_based_accum_stand <- ggplot(specaccum_stand_df) +
 # -----------------------------------------------------------------------------------------------------------------
 # 5TH NOVEMBER = LONG LIVE GUY FAWKES
 
-# log of total number of taxa by taxonomic level- ie no of phlya- to genera - log this and use slope to get a prdicted species no
-
-
-data <- read.csv("CCZ_CHECKLIST_2022-11-04.CSV")
-
-## get total per taxon level- ie total phyla- order-calss-fam-genera recorded
-data2 <- tapply(data[, "scientificName"], data[, "taxonRank"],
-                function(x) { length(unique(x))})
-
-## output summary as csv
-write.csv(data2, "OUTPUT.csv")
-
-## log of total per taxa level
-test <- log(data$Total)
-## append this as a column in file (could do within script- here I did in excel)
-write.csv(test, "OUTPUT.csv")
-
-## read in file with column of log value and taxon order as number- 1 - phlya, 2- class, 3 - order, 4 fam, 5 genus
-data <- read.csv("temp_summary_checklist_taxonrank.csv")
-
-## model
-model1 <- lm(log ~ order, data = data)
-
-autoplot(model1, smooth.colour = NA)
-anova(model1)
-summary(model1)
-
-## PLOT
-plot(data$olog, data$order, pch = 16)
-## add line to basic plot -  line best fit with linear model
-abline(lm(log ~ order, data = data)) ## 
-
-## how to get log value for order = 6 (i.e. next taxon level- sp will be 6)
-fitted <- predict(lm(data$log ~ data$order))
-
-data$order[7];data$log[7]
-order[7];log[7]; data = data
-
-
-# -----------------------------------------------------------------------------------------------------------------
-
-#########################
+##
 
 ## FIG 3 SPECIES RICHNESS ESTIMATES + CURVES 
 
@@ -356,7 +315,7 @@ p1 <- ggplot(data = data, aes(x = Year)) + theme_bw() +
 
 #############################
 
-## FIG 2B TOTAL NAMED SPECIES + MOSPRHSPP BY PHYLA
+## FIG 2A TOTAL NAMED SPECIES + MOSPRHSPP BY PHYLA
 
 library(tidyverse)
 
@@ -426,6 +385,9 @@ upset <- (read.csv("CCZ_ALL_SPP_DATA_REGION_2022-11-05.csv",header=T,sep=",",fil
 
 dim(upset)
 
+data3 <- tapply(upset[, "Species"], upset[, "Site"],
+                function(x) { length(unique(x))})
+
 ## w presence absense from fuzzy sim
 data.presabs <- splist2presabs(upset, sites.col = "Site",
                                sp.col = "Species", keep.n = FALSE)
@@ -473,3 +435,54 @@ morph_plot <- UpSet(morph_comb, set_order = colnames(morph_comb),
 morph_plot = draw(morph_plot)
 
 ######################################
+
+
+# -----------------------------------------------------------------------------------------------------------------
+
+## S FIG HIGHER TAXON RICHNESS INTERPOLATION
+
+# log of total number of taxa by taxonomic level- ie no of phlya- to genera - log this and use slope to get a prdicted species no
+
+
+data <- read.csv("CCZ_CHECKLIST_2022-11-04.CSV")
+
+## get total per taxon level- ie total phyla- order-calss-fam-genera recorded
+data2 <- tapply(data[, "scientificName"], data[, "taxonRank"],
+                function(x) { length(unique(x))})
+
+## output summary as csv
+write.csv(data2, "OUTPUT.csv")
+
+## log of total per taxa level
+test <- log(data$Total)
+## append this as a column in file (could do within script- here I did in excel)
+write.csv(test, "OUTPUT.csv")
+
+## read in file with column of log value and taxon order as number- 1 - phlya, 2- class, 3 - order, 4 fam, 5 genus
+data <- read.csv("temp_summary_checklist_taxonrank.csv")
+
+## model
+model1 <- lm(log ~ order, data = data)
+
+autoplot(model1, smooth.colour = NA)
+anova(model1)
+summary(model1)
+
+## PLOT
+plot(data$olog, data$order, pch = 16)
+## add line to basic plot -  line best fit with linear model
+abline(lm(log ~ order, data = data)) ## 
+
+## how to get log value for order = 6 (i.e. next taxon level- sp will be 6)
+fitted <- predict(lm(data$log ~ data$order))
+
+data$order[7];data$log[7]
+order[7];log[7]; data = data
+
+# -----------------------------------------------------------------------------------------------------------------
+
+
+## violin plot of depth
+
+## all legit taxa records- not just spp level
+
