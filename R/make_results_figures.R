@@ -317,3 +317,159 @@ write.table(community_matrix, file = 'data-processed/CCZ_community_matrix.txt')
 write.csv(specaccum_df, file = 'CCZ_specaccum.csv')
 save(i.out, file = 'data-processed/iNEXT_abundance.RData')
 Hills_q
+
+# -----------------------------------------------------------------------------------------------------------------
+
+## FIG 2
+
+## 2B CUMULATIVE SPECIES DESCRIPTIONS
+
+data <- read.csv("CCZ_LITERATURE_PAPERS_2022-11-05.csv")
+dim(data)
+names(data)
+## summary by year
+
+data3 <- tapply(data[, "reference"], data[, "year_published"],
+                function(x) { length(unique(x))})
+write.csv(data3, "OUTPUT.csv")
+
+data <- read.csv("TEMP_papers_table_1980_on_2022-11-05.csv")
+
+## cumulative totals - run with and without legend
+p1 <- ggplot(data = data, aes(x = Year)) + theme_bw() +
+      geom_line(aes(y = cumul_desc, colour = "cumul_desc"), size = 1) +
+      geom_line(aes(y = cumul_spp, colour = "cumul_spp"), size = 1) +
+      geom_line(aes(y = cumul_pubs, colour = "cumul_pubs"), size = 1) +
+      labs(x = "Year", y = "Cumulative totals") +
+      #  ggtitle("Cumulative totals of publications and descriptions (year 2000- 2021)") +
+      theme(text=element_text(size=12), #change font size of all text
+            axis.text=element_text(size=12), #change font size of axis text
+            axis.title=element_text(size=12), #change font size of axis titles
+            plot.title=element_text(size=12), #change font size of plot title
+            legend.text=element_text(size=12), #change font size of legend text
+            legend.title=element_text(size=12)) + 
+      #theme(legend.position = "none") +
+      scale_colour_manual("", 
+                          breaks = c("cumul_desc", "cumul_spp", "cumul_pubs"),
+                          values = c("black", "coral2", "steelblue"),
+                          labels = c("all descriptions", "new species", " publications"))
+
+#############################
+
+## FIG 2B TOTAL NAMED SPECIES + MOSPRHSPP BY PHYLA
+
+library(tidyverse)
+
+data <- read.csv("CCZ_CHECKLIST_2022-11-04.csv")
+
+## filter named spp no qual
+data2 <- data %>%
+      filter(short_spp_cl == "yes")
+dim(data2) # 424
+length(unique(data2$scientificName))
+
+## spp only
+data3 <- tapply(data2[, "scientificName"], data2[, "Phylum"],
+                function(x) { length(unique(x))})
+write.csv(data3, "OUTPUT.csv")
+
+###############################################
+
+## MORPHOSPP
+data <- read.csv("CCZ_MSPP_CHECKLIST_2022-11-04.csv")
+length(unique(data$taxonConceptID))
+
+## spp only
+data3 <- tapply(data[, "taxonConceptID"], data[, "Phylum"],
+                function(x) { length(unique(x))})
+
+write.csv(data3, "OUTPUT.csv")
+
+## COMBINED OUTPUTS INTO ONE FILE - ALL PHYLA VERSION
+SUM <- read.csv("TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv")
+
+## border around bands
+ggplot(SUM, aes(Phylum, Total, fill = Data)) + 
+      geom_bar(stat="identity", position="dodge", color="black") + coord_flip()
+
+## FINAL PLOT ## RUN WITH AND WITHOUT LEGEND
+ggplot(SUM, aes(Phylum, Total, fill = Data)) + theme_bw() +
+      geom_bar(stat="identity", position="dodge", color="black") + coord_flip() +
+      theme(text=element_text(size=12), #change font size of all text
+            axis.text=element_text(size=12), #change font size of axis text
+            axis.title=element_text(size=12), #change font size of axis titles
+            plot.title=element_text(size=12), #change font size of plot title
+            legend.text=element_text(size=12), #change font size of legend text
+            legend.title=element_text(size=12)) + coord_flip() + 
+      theme(legend.position = "none") +
+      scale_fill_manual('Position', values=c('steelblue', 'pink'))
+
+
+## fig 2 ## stacked bar
+ggplot(SUM, aes(Phylum, Total, fill = Data)) + theme_bw() +
+      geom_bar(stat="identity", position="stack", color="black") + 
+      theme(text=element_text(size=12), #change font size of all text
+            axis.text=element_text(size=12), #change font size of axis text
+            axis.title=element_text(size=12), #change font size of axis titles
+            plot.title=element_text(size=12), #change font size of plot title
+            legend.text=element_text(size=12), #change font size of legend text
+            legend.title=element_text(size=12)) + coord_flip() + 
+      theme(legend.position = "none") +
+      scale_fill_manual('Position', values=c('steelblue', 'pink'))
+
+
+# -----------------------------------------------------------------------------------------------------------------
+
+## SUPPLEMENTARY FIGS
+
+upset <- (read.csv("CCZ_ALL_SPP_DATA_REGION_2022-11-05.csv",header=T,sep=",",fileEncoding="latin1")[-2,])
+
+dim(upset)
+
+## w presence absense from fuzzy sim
+data.presabs <- splist2presabs(upset, sites.col = "Site",
+                               sp.col = "Species", keep.n = FALSE)
+
+test <- t(data.presabs)
+head(test)
+test <- t(as.matrix(data.presabs[,-1]))
+colnames(test) <- data.presabs$Site
+head(test)
+
+basin_COLS <- viridis(n=8)[-8]
+names(basin_COLS) <- colnames(test)
+morph_comb <- make_comb_mat(test, mode = "intersect")
+
+# pdf("Shared_wCCZ_species-Upset_plot.pdf", width = 10, height = 3.5)
+morph_plot <- UpSet(morph_comb, set_order = colnames(morph_comb), 
+                    comb_order = rev(order(comb_size(morph_comb))), 
+                    pt_size = unit(2, "mm"), lwd = 1, top_annotation = HeatmapAnnotation(
+                          
+                          "Shared species (all)" = anno_barplot(comb_size(morph_comb),
+                                                                ylim = c(0, max(comb_size(morph_comb))*1.1),
+                                                                border = FALSE,
+                                                                gp = gpar(fill = "black"),
+                                                                height = unit(10, "cm")  ## adjust bar to dot matrix ratio: 10 REG   
+                          ),
+                          annotation_name_side = "left",
+                          annotation_name_rot = 90), ## angle of legend
+                    left_annotation = rowAnnotation(
+                          "No. species per region (all)" = anno_barplot(-set_size(morph_comb),
+                                                                        baseline = 0,
+                                                                        axis_param = list(
+                                                                              at = c(0, -250, -500, -1000, -1500),
+                                                                              labels = c(0, 250, 500, 1000, 1500),
+                                                                              labels_rot = 0),
+                                                                        border = FALSE,
+                                                                        gp = gpar(fill = basin_COLS),
+                                                                        width = unit(7, "cm"),  ## width of lhs of y axis: 7: CA; 5: SA; 10 REG
+                                                                        height = unit(0.5, "cm")),
+                          set_name = anno_text(set_name(morph_comb),
+                                               location = 0.5, ## labels for side bars
+                                               just = "center",
+                                               width = max_text_width(set_name(morph_comb)) + 
+                                                     unit(1, "mm"))), right_annotation = NULL, show_row_names=FALSE)
+
+morph_plot = draw(morph_plot)
+
+######################################
