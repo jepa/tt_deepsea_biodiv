@@ -1,4 +1,25 @@
 library(vegan)
+library(ape)
+library(iNEXT)
+library(picante)
+library(MuMIn)
+library(UpSetR)
+library(lmodel2)
+library(betapart)
+library(fuzzySim)
+library(viridis)
+library(RColorBrewer)
+library(kableExtra)
+library(VennDiagram)
+library(ComplexHeatmap)
+library(estimateR)
+library(knitr)
+library(ade4)
+library(ggfortify)
+library(ggplot2)
+library(viridis)
+
+library(vegan)
 library(tidyverse)
 library(iNEXT)
 library(ggthemes)
@@ -444,22 +465,24 @@ morph_plot = draw(morph_plot)
 # log of total number of taxa by taxonomic level- ie no of phlya- to genera - log this and use slope to get a prdicted species no
 
 
-data <- read.csv("CCZ_CHECKLIST_2022-11-04.CSV")
+data <- read.csv("CCZ_CHECKLIST_2022-11-06.CSV")
 
 ## get total per taxon level- ie total phyla- order-calss-fam-genera recorded
 data2 <- tapply(data[, "scientificName"], data[, "taxonRank"],
                 function(x) { length(unique(x))})
 
-## output summary as csv
+## output summary as csv- 
 write.csv(data2, "OUTPUT.csv")
+## edit- remove species- add column for taxon order
+data <- read.csv("OUTPUT.CSV")
 
 ## log of total per taxa level
 test <- log(data$Total)
 ## append this as a column in file (could do within script- here I did in excel)
-write.csv(test, "OUTPUT.csv")
+write.csv(test, "OUTPUT2.csv")
 
 ## read in file with column of log value and taxon order as number- 1 - phlya, 2- class, 3 - order, 4 fam, 5 genus
-data <- read.csv("temp_summary_checklist_taxonrank.csv")
+data <- read.csv("temp_log_v2_2022-11-06.csv")
 
 ## model
 model1 <- lm(log ~ order, data = data)
@@ -469,9 +492,10 @@ anova(model1)
 summary(model1)
 
 ## PLOT
-plot(data$olog, data$order, pch = 16)
+plot(data$order, data$log, pch = 16)
 ## add line to basic plot -  line best fit with linear model
 abline(lm(log ~ order, data = data)) ## 
+
 
 ## how to get log value for order = 6 (i.e. next taxon level- sp will be 6)
 fitted <- predict(lm(data$log ~ data$order))
@@ -485,4 +509,77 @@ order[7];log[7]; data = data
 ## violin plot of depth
 
 ## all legit taxa records- not just spp level
+
+## supp fig by depth - violin
+
+data1 <- read.csv("temp_checklist_2022-11-06.csv")
+data2 <- read.csv("CCZ_ALL_TAXA_2022-11-06.csv")
+merga <- merge(data1, data2, by="scientificName", all.y = T)
+dim(merga) ## 511   7
+dim(data1) ## 268   6
+dim(data2) ## 511   2
+write.csv(merga, "OUTPUT.csv")
+
+data <- read.csv("CCZ_ALL_TAXA_v1_2022-11-06.csv")
+## >4000 replaced with 4000 for now
+
+## remove nas in depth
+data2 <- data %>%
+      filter(Depth != "NA")
+dim(data2) # [1] 62908    17
+dim(data) [1] 64541    17
+
+## too many phyla- weed out- where <100 records
+
+data3 <- tapply(data2[, "all_taxa_rec"], data2[, "Phylum"],
+                function(x) { length(unique(x))})
+write.csv(data3, "OUTPUT.csv")
+
+data_ed <- data %>%
+      count(Phylum)
+## same result
+
+## remove following
+#Entoprocta
+#Cephalorhyncha
+#Ctenophora
+#Coelenterata
+#Gnathostomulida
+#Hemichordata
+#Platyhelminthes
+#Priapulida
+#Nemertea
+#Rotifera
+## PLUs NO PHYLA ASSIGNED- IE 'METAZOA'
+
+## read in edited file
+data <- read.csv("temp_4_depth_CCZ_ALL_TAXA_v2_2022-11-06.csv")
+
+ggplot(data = data, mapping = aes(x = Phylum, y = Depth, 
+                                  fill = Phylum)) + geom_boxplot() + coord_flip()
+
+## plot
+ggplot(data = data, mapping = aes(x = Phylum, y = Depth, 
+                                  fill = Phylum)) + geom_violin() + coord_flip() + theme_bw() +
+      theme(text=element_text(size=12), #change font size of all text
+            axis.text=element_text(size=12), #change font size of axis text
+            axis.title=element_text(size=12), #change font size of axis titles
+            plot.title=element_text(size=12), #change font size of plot title
+            legend.text=element_text(size=12), #change font size of legend text
+            legend.title=element_text(size=12)) + scale_fill_viridis_d() + 
+      theme(legend.position = "none")
+
+
+## HORIZONTAL VERSION
+ggplot(data = data, mapping = aes(x = Phylum, y = Depth, 
+                                  fill = Phylum)) + geom_violin() + theme_bw() +
+      scale_fill_viridis_d() +
+      theme(text=element_text(size=12), #change font size of all text
+            axis.text=element_text(size=12), #change font size of axis text
+            axis.title=element_text(size=12), #change font size of axis titles
+            plot.title=element_text(size=12), #change font size of plot title
+            legend.text=element_text(size=12), #change font size of legend text
+            legend.title=element_text(size=12)) + theme(legend.position = "none") +
+      theme(axis.title.x=element_blank(),
+            axis.text.x = element_text(angle = 55, hjust = 1))
 
