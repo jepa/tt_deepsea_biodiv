@@ -8,9 +8,11 @@ library(spatialEco)
 # -----------------------------------------------------------------------------------------------------------------
 # Raw data
 # -----------------------------------------------------------------------------------------------------------------
-data <- read.csv("data-raw/TEST_LIT+DD_ALL_SPP_2022-10-10.csv", header = T, sep = ",", fileEncoding = "latin1")[-2, ] %>% 
+data_all_species <- read.csv("data-raw/CCZ_ALL_SPP_DATA_2022-11-05.csv", header = T, sep = ",", fileEncoding = "latin1")[-2, ] %>% 
       drop_na(Abundance)
-data <- data[nzchar(data$Site), ]
+data_all_species <- data_all_species[nzchar(data_all_species$Site), ]
+
+data_CCZ_only <- data_all_species %>% mutate(Site = "CCZ")
 
 # Species data with coords etc.
 data_coords <- read.csv('data-raw/TEMP_SPECIES_ALL_v3_2022-09-22.csv') %>% 
@@ -24,14 +26,14 @@ data_coords <- read.csv('data-raw/TEMP_SPECIES_ALL_v3_2022-09-22.csv') %>%
 # Make community matrices
 # -----------------------------------------------------------------------------------------------------------------
 # By site
-community_matrix <- picante::sample2matrix(data) 
+community_matrix <- picante::sample2matrix(data_all_species) 
 
 empty_sites <- rownames(community_matrix[rowSums(community_matrix) == 0, ])
 community_matrix <- community_matrix[!rownames(community_matrix) %in% empty_sites, ]
 
 length(names(sapply(community_matrix, is.numeric))) == length(colnames(community_matrix))
 
-# By grid, abunadnce standardised by pseudo-effort (number of sampling sites in grid)
+# By grid, abundance standardised by pseudo-effort (number of sampling sites in grid)
 sites_df <- data.frame(long = data_coords$long, lat = data_coords$lat, site_ID = data_coords$site_ID) %>% 
       unique()
 
@@ -69,7 +71,7 @@ com_matrix_standardised[is.na(com_matrix_standardised)] <-  0
 rownames(com_matrix_standardised) <- com_matrix_standardised$grid_ID
 
 # -----------------------------------------------------------------------------------------------------------------
-# Species curve data - some take log to compile
+# Species curve data - some take long to compile
 # -----------------------------------------------------------------------------------------------------------------
 specaccum_result <- specaccum(community_matrix, method = 'random', permutations = 100)  
 specaccum_df <-  data.frame(sites = specaccum_result$sites, richness = specaccum_result$richness, sd = specaccum_result$sd)
