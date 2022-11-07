@@ -27,6 +27,7 @@ data_coords <- read.csv('data-raw/TEMP_SPECIES_ALL_v3_2022-09-22.csv') %>%
 # -----------------------------------------------------------------------------------------------------------------
 # By site
 community_matrix <- picante::sample2matrix(data_all_species) 
+community_matrix_CCZ <- picante::sample2matrix(data_CCZ_only) 
 
 empty_sites <- rownames(community_matrix[rowSums(community_matrix) == 0, ])
 community_matrix <- community_matrix[!rownames(community_matrix) %in% empty_sites, ]
