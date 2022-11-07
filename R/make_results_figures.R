@@ -21,6 +21,7 @@
 
 library(tidyverse)
 library(patchwork)
+library(vegan)
 
 theme_set(theme_bw(base_size = 12))
 
@@ -31,10 +32,9 @@ species_descriptions <- read.csv("data-raw/TEMP_papers_table_1980_on_2022-11-05.
       pivot_longer(cols = 6:8, names_to = "var", values_to = "number")
 phyla_overview <- read.csv("data-raw/TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv")
 specaccum_df <- read.csv('data-processed/CCZ_specaccum.csv')
-
-
-
 community_matrix <- read.table('data-processed/CCZ_community_matrix.txt')
+community_matrix_CCZ <- read.table('data-processed/community_matrix_CCZ.txt')
+
 load('data-processed/CCZ_com_matrix_standardised.RData') 
 
 # -----------------------------------------------------------------------------------------------------------------
@@ -69,11 +69,29 @@ ggsave(figure_2_final,
 # -----------------------------------------------------------------------------------------------------------------
 # Figure 3: Species accumulation curves for CCZ
 # -----------------------------------------------------------------------------------------------------------------
-sample_based_accum <- ggplot(specaccum_df) +
+# A: Sample-based family accumulation 
+# B: Sample-based species accumulation 
+# C: Taxon rank/order versus log of total per taxon order 
+# D: Rarefaction, all sites in CCZ
+A_family_accum <- ggplot()
+
+B_species_accum <- ggplot(specaccum_df) +
       geom_ribbon(aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
       geom_line(aes(sites, richness)) +
+      xlim(0, 2000) +
       xlab("Sites") +
-      ylab("Species richness"); sample_based_accum
+      ylab("Species richness"); B_species_accum
+
+C_taxon_rank <- ggplot()
+
+CCZ_rarecurve <- as.data.frame(rarecurve(community_matrix_CCZ, step = 20))
+CCZ_rarecurve$Individuals <- as.integer(gsub('N', '', rownames(CCZ_rarecurve)))
+colnames(CCZ_rarecurve)[1] <- "Species"
+
+D_rarefaction_CCZ <- ggplot(CCZ_rarecurve) +
+      geom_line(aes(Individuals, Species), cex = 2, col = "darkred") +
+      xlab("Individuals") +
+      ylab("Species richness"); D_rarefaction_CCZ
 
 # -----------------------------------------------------------------------------------------------------------------
 # Figure: Rarefaction curves
@@ -186,17 +204,17 @@ data <- read.csv("TEST_LIT+DD_ALL_SPP_V6_CCZ_ONLY_2022-11-05.csv") ## 4488 SPP N
 data.matrix <- sample2matrix(data)
 data.matrix[1:5, 1:5]
 
-species_no <- specnumber(data.matrix)
-raremax <- min(rowSums(data.matrix))
-Srare <- rarefy(data.matrix, raremax)
+species_no <- specnumber(community_matrix_CCZ)
+raremax <- min(rowSums(community_matrix_CCZ))
+Srare <- rarefy(community_matrix_CCZ, raremax)
 plot(species_no, Srare, xlab = "Observed No. of Species", ylab = "Species")
 abline(0, 1)
 
-rarecurve(data.matrix, step = 20, sample = raremax, cex = 1, col = viridis(n=4)[-4], 
+rarecurve(community_matrix_CCZ, step = 20, sample = raremax, cex = 1, col = viridis(n=4)[-4], 
           lwd = 2, lty = c("solid", rep("dashed", 2)), label = F,xlab = "No. of individuals", 
           ylab = "No. of Species", cex.axis = 1)
 # legend("bottomright", legend = rownames(com_mat), col = viridis(n=4)[-4], pch=19, cex = 0.5, y.intersp = 0.8, pt.cex = 1)
-rarecurve(data.matrix, step = 20)
+rarecurve(community_matrix_CCZ, step = 20)
 
 ## estimateR for CCZ only data
 
