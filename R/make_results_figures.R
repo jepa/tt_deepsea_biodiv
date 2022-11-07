@@ -31,7 +31,7 @@ theme_set(theme_bw(base_size = 12))
 species_descriptions <- read.csv("data-raw/TEMP_papers_table_1980_on_2022-11-05.csv") %>% 
       pivot_longer(cols = 6:8, names_to = "var", values_to = "number")
 phyla_overview <- read.csv("data-raw/TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv")
-specaccum_df <- read.csv('data-processed/CCZ_specaccum.csv')
+specaccum_df <- read.csv('data-processed/CCZ_specaccum_sites.csv')
 CCZ_rarecurve <- read.csv("data-processed/CCZ_rarecurve.csv")
 
 taxon_rank_data <- read.csv("data-raw/temp_log_v2_2022-11-06.csv")

@@ -77,9 +77,6 @@ rownames(com_matrix_standardised) <- com_matrix_standardised$grid_ID
 specaccum_sites <- specaccum(community_matrix, method = 'random', permutations = 100)  
 specaccum_sites_df <-  data.frame(sites = specaccum_sites$sites, richness = specaccum_sites$richness, sd = specaccum_sites$sd)
 
-specaccum_CCZ <- specaccum(community_matrix_CCZ, method = 'random', permutations = 100)  
-specaccum_CCZ_df <-  data.frame(sites = specaccum_CCZ$sites, richness = specaccum_CCZ$richness, sd = specaccum_CCZ$sd)
-
 CCZ_rarecurve <- as.data.frame(rarecurve(community_matrix_CCZ, step = 20))
 CCZ_rarecurve$Individuals <- as.integer(gsub('N', '', rownames(CCZ_rarecurve)))
 colnames(CCZ_rarecurve)[1] <- "Species"
@@ -91,9 +88,8 @@ colnames(CCZ_rarecurve)[1] <- "Species"
 write.table(community_matrix, file = 'data-processed/CCZ_community_matrix.txt')
 write.table(community_matrix_CCZ, file = 'data-processed/community_matrix_CCZ.txt')
 
-save(com_matrix_standardised, file = 'data-processed/CCZ_com_matrix_standardised.RData')  
-
-write.csv(specaccum_df, file = 'data-processed/CCZ_specaccum.csv')
+# save(com_matrix_standardised, file = 'data-processed/CCZ_com_matrix_standardised.RData')  
+write.csv(specaccum_sites_df, file = 'data-processed/CCZ_specaccum_sites.csv')
 write.csv(CCZ_rarecurve, file = 'data-processed/CCZ_rarecurve.csv')
 
 # writeOGR(intersectGrid, dsn = 'data-processed', layer = 'CCZ_grid_5degree', driver = "ESRI Shapefile")
