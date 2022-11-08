@@ -97,7 +97,8 @@ A_Chao1 <- ggplot(Hills_q_CCZ_df, aes(x = size_based.m, y = size_based.qD, lty =
             legend.title = element_blank(),
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Number of Individuals") +
-      ylab("Species diversity"); A_Chao1
+      ylab("Species diversity") +
+      scale_y_continuous(breaks = seq(0, 5000, 1000)); A_Chao1
 
 B_Chao2 <- ggplot()
 

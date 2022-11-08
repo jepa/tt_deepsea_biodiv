@@ -86,6 +86,11 @@ com_matT <- t(community_matrix_CCZ)
 Hills_q_CCZ <- iNEXT(com_matT, q=0, datatype = "abundance", nboot = 2)
 Hills_q_CCZ_df <- as.data.frame(Hills_q_CCZ$iNextEst)
 
+com_mat_inc <- community_matrix_CCZ
+com_mat_inc[which(com_mat_inc>1)] <- 1
+inc_freq <- as.incfreq(t(com_mat_inc))
+Hills_q_0_inc_CCZ <- iNEXT(inc_freq, q=0, datatype = "incidence_freq", nboot = 2)
+
 # -----------------------------------------------------------------------------------------------------------------
 # Export
 # -----------------------------------------------------------------------------------------------------------------
