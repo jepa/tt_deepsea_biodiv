@@ -38,7 +38,6 @@ phyla_overview <- read.csv("data-raw/TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv"
       mutate(perc = paste0(round((Total/total_phylum)*100), "%"))
 phyla_overview$ypos <- ifelse(phyla_overview$Data == "named species", phyla_overview$total_phylum, phyla_overview$total_phylum + 70)
 
-
 specaccum_df <- read.csv('data-processed/CCZ_specaccum_sites.csv')
 CCZ_rarecurve <- read.csv("data-processed/CCZ_rarecurve.csv")
 
@@ -48,6 +47,11 @@ Hills_q_CCZ_df <- read.csv('data-processed/Hills_q_CCZ_df.csv') %>%
 
 taxon_rank_data <- read.csv("data-raw/temp_log_v2_2022-11-06.csv")
 
+data_regions <- read.csv('data-raw/CCZ_ALL_SPP_DATA_V2_REGION_2022-11-08.csv') %>% 
+      drop_na()
+data_regions <- data_regions[nzchar(data_regions$Site), ]
+
+test <- read.csv('data-raw/CCZ_ALL_TAXA_v2_2022-11-08.csv')
 load('data-processed/CCZ_com_matrix_standardised.RData') 
 
 # -----------------------------------------------------------------------------------------------------------------
@@ -141,6 +145,19 @@ C_taxon_rank <- ggplot(taxon_rank_data, aes(x = order, y = log, col = ID)) +
 ggsave(C_taxon_rank,
        filename = 'output-figures/taxa_int.tiff', 
        width = 8, height = 5, units = 'in', dpi = 150)
+
+# -----------------------------------------------------------------------------------------------------------------
+# NMDS plot for regions
+# -----------------------------------------------------------------------------------------------------------------
+CCZ_regions_matrix <- picante::sample2matrix(data_regions) 
+
+
+
+
+
+
+
+
 
 # -----------------------------------------------------------------------------------------------------------------
 # Mu's hodge podge code corner of doom

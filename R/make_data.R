@@ -12,11 +12,12 @@ library(iNEXT)
 data_all_species <- read.csv("data-raw/CCZ_ALL_SPP_DATA_v2_2022-11-06.csv", header = T, sep = ",", fileEncoding = "latin1")[-2, ] %>% 
       drop_na(Abundance)
 data_all_species <- data_all_species[nzchar(data_all_species$Site), ]
+data_all_species <- data_all_species[nzchar(data_all_species$Species), ]
 
 data_CCZ_only <- data_all_species %>% mutate(Site = "CCZ")
 
 # Species data with coords etc.
-data_coords <- read.csv('data-raw/TEMP_SPECIES_ALL_v3_2022-09-22.csv') %>% 
+data_coords <- read.csv('data-raw/CCZ_all_samples+coords_2022-11-08.csv') %>% 
       filter(!is.na(decimalLongitude), !is.na(decimalLatitude), !is.na(individualCount)) %>% 
       rename(lat = decimalLatitude, 
              long = decimalLongitude) %>% 
