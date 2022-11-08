@@ -432,7 +432,7 @@ ggplot(SUM, aes(Phylum, Total, fill = Data)) + theme_bw() +
 
 ## SUPPLEMENTARY FIGS
 
-upset <- (read.csv("CCZ_ALL_SPP_DATA_REGION_2022-11-05.csv",header=T,sep=",",fileEncoding="latin1")[-2,])
+upset <- (read.csv("CCZ_ALL_SPP_DATA_V1_REGION_2022-11-05.csv",header=T,sep=",",fileEncoding="latin1")[-2,])
 
 dim(upset)
 
@@ -512,7 +512,8 @@ test <- log(data$Total)
 write.csv(test, "OUTPUT2.csv")
 
 ## read in file with column of log value and taxon order as number- 1 - phlya, 2- class, 3 - order, 4 fam, 5 genus
-data <- read.csv("temp_log_v2_2022-11-06.csv")
+
+data <- read.csv("temp_log_2022-11-06.csv")
 
 ## model
 model1 <- lm(log ~ order, data = data)
