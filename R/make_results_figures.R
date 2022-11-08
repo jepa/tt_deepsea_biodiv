@@ -42,6 +42,10 @@ phyla_overview$ypos <- ifelse(phyla_overview$Data == "named species", phyla_over
 specaccum_df <- read.csv('data-processed/CCZ_specaccum_sites.csv')
 CCZ_rarecurve <- read.csv("data-processed/CCZ_rarecurve.csv")
 
+Hills_q_CCZ_df <- read.csv('data-processed/Hills_q_CCZ_df.csv') %>% 
+      filter(size_based.Method != "Observed") %>% 
+      mutate(size_based.Method = factor(size_based.Method, levels = c("Rarefaction", "Extrapolation")))
+
 taxon_rank_data <- read.csv("data-raw/temp_log_v2_2022-11-06.csv")
 
 load('data-processed/CCZ_com_matrix_standardised.RData') 
@@ -85,25 +89,24 @@ ggsave(figure_2,
 # -----------------------------------------------------------------------------------------------------------------
 # Figure 3: Species accumulation curves for CCZ
 # -----------------------------------------------------------------------------------------------------------------
-# A: Sample-based family accumulation 
-# B: Sample-based species accumulation 
-# C: Taxon rank/order versus log of total per taxon order 
-# D: Rarefaction, all sites in CCZ
-A_family_accum <- ggplot()
+A_Chao1 <- ggplot(Hills_q_CCZ_df, aes(x = size_based.m, y = size_based.qD, lty = size_based.Method)) +
+      geom_line(col = "red", cex = 1) +
+      theme(legend.justification = c(-0.35, 1), 
+            legend.position = c(0, 1),
+            legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.title = element_blank(),
+            legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      xlab("Number of Individuals") +
+      ylab("Species diversity"); A_Chao1
 
-B_species_accum <- ggplot(specaccum_df) +
+B_Chao2 <- ggplot()
+
+C_species_accum <- ggplot(specaccum_df) +
       geom_ribbon(aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
       geom_line(aes(sites, richness)) +
       xlim(0, 2000) +
       xlab("Sites") +
       ylab("Species richness"); B_species_accum
-
-C_taxon_rank <- ggplot(taxon_rank_data, aes(x = order, y = log)) +
-      geom_point() +
-      geom_smooth(method = "lm", se = F) +
-      ylab("Log of total species per taxon order") +
-      xlab("") +
-      scale_x_continuous(labels = c("Phyla", "Class", "Order", "Family", "Genus")); C_taxon_rank
 
 D_rarefaction_CCZ <- ggplot(CCZ_rarecurve) +
       geom_line(aes(Individuals, Species), cex = 2, col = "darkred") +
@@ -116,6 +119,16 @@ ggsave(figure_3,
        filename = 'output-figures/figure_3.png', 
        width = 20, height = 20, units = 'cm', dpi = 150)
 
+
+
+
+
+C_taxon_rank <- ggplot(taxon_rank_data, aes(x = order, y = log)) +
+      geom_point() +
+      geom_smooth(method = "lm", se = F) +
+      ylab("Log of total species per taxon order") +
+      xlab("") +
+      scale_x_continuous(labels = c("Phyla", "Class", "Order", "Family", "Genus")); C_taxon_rank
 
 
 # -----------------------------------------------------------------------------------------------------------------

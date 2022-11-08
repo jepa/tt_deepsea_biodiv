@@ -4,11 +4,12 @@ library(rgeos)
 library(rgdal)
 library(raster)
 library(spatialEco)
+library(iNEXT)
 
 # -----------------------------------------------------------------------------------------------------------------
 # Raw data
 # -----------------------------------------------------------------------------------------------------------------
-data_all_species <- read.csv("data-raw/CCZ_ALL_SPP_DATA_2022-11-06.csv", header = T, sep = ",", fileEncoding = "latin1")[-2, ] %>% 
+data_all_species <- read.csv("data-raw/CCZ_ALL_SPP_DATA_v2_2022-11-06.csv", header = T, sep = ",", fileEncoding = "latin1")[-2, ] %>% 
       drop_na(Abundance)
 data_all_species <- data_all_species[nzchar(data_all_species$Site), ]
 
@@ -81,6 +82,9 @@ CCZ_rarecurve <- as.data.frame(rarecurve(community_matrix_CCZ, step = 20))
 CCZ_rarecurve$Individuals <- as.integer(gsub('N', '', rownames(CCZ_rarecurve)))
 colnames(CCZ_rarecurve)[1] <- "Species"
 
+com_matT <- t(community_matrix_CCZ)
+Hills_q_CCZ <- iNEXT(com_matT, q=0, datatype = "abundance", nboot = 2)
+Hills_q_CCZ_df <- as.data.frame(Hills_q_CCZ$iNextEst)
 
 # -----------------------------------------------------------------------------------------------------------------
 # Export
@@ -91,6 +95,7 @@ write.table(community_matrix_CCZ, file = 'data-processed/community_matrix_CCZ.tx
 # save(com_matrix_standardised, file = 'data-processed/CCZ_com_matrix_standardised.RData')  
 write.csv(specaccum_sites_df, file = 'data-processed/CCZ_specaccum_sites.csv')
 write.csv(CCZ_rarecurve, file = 'data-processed/CCZ_rarecurve.csv')
+write.csv(Hills_q_CCZ_df, file = 'data-processed/Hills_q_CCZ_df.csv')
 
 # writeOGR(intersectGrid, dsn = 'data-processed', layer = 'CCZ_grid_5degree', driver = "ESRI Shapefile")
 # write.csv(data_merged, file = 'data-processed/CCZ_specdata_pseudoeffort.csv')
