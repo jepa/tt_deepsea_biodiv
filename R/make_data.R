@@ -8,7 +8,7 @@ library(spatialEco)
 # -----------------------------------------------------------------------------------------------------------------
 # Raw data
 # -----------------------------------------------------------------------------------------------------------------
-data_all_species <- read.csv("data-raw/CCZ_ALL_SPP_DATA_2022-11-05.csv", header = T, sep = ",", fileEncoding = "latin1")[-2, ] %>% 
+data_all_species <- read.csv("data-raw/CCZ_ALL_SPP_DATA_2022-11-06.csv", header = T, sep = ",", fileEncoding = "latin1")[-2, ] %>% 
       drop_na(Abundance)
 data_all_species <- data_all_species[nzchar(data_all_species$Site), ]
 

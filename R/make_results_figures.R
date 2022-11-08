@@ -22,6 +22,7 @@
 library(tidyverse)
 library(patchwork)
 library(vegan)
+library(ggthemes)
 
 theme_set(theme_bw(base_size = 12))
 
@@ -30,7 +31,14 @@ theme_set(theme_bw(base_size = 12))
 # -----------------------------------------------------------------------------------------------------------------
 species_descriptions <- read.csv("data-raw/TEMP_papers_table_1980_on_2022-11-05.csv") %>% 
       pivot_longer(cols = 6:8, names_to = "var", values_to = "number")
-phyla_overview <- read.csv("data-raw/TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv")
+phyla_overview <- read.csv("data-raw/TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv") %>% 
+      group_by(Phylum) %>% 
+      mutate(total_phylum = sum(Total)) %>% 
+      group_by(Data) %>% 
+      mutate(perc = paste0(round((Total/total_phylum)*100), "%"))
+phyla_overview$ypos <- ifelse(phyla_overview$Data == "named species", phyla_overview$total_phylum, phyla_overview$total_phylum + 70)
+
+
 specaccum_df <- read.csv('data-processed/CCZ_specaccum_sites.csv')
 CCZ_rarecurve <- read.csv("data-processed/CCZ_rarecurve.csv")
 
@@ -38,36 +46,41 @@ taxon_rank_data <- read.csv("data-raw/temp_log_v2_2022-11-06.csv")
 
 load('data-processed/CCZ_com_matrix_standardised.RData') 
 
-
-
 # -----------------------------------------------------------------------------------------------------------------
 # Figure 2: Raw data
 # -----------------------------------------------------------------------------------------------------------------
 descriptions_figure <- ggplot(species_descriptions, aes(x = Year, y = number, colour = var, fill = var)) +
       geom_line(size = 1) +
       labs(x = "Year", y = "Cumulative totals") +
-      theme(legend.justification = c(0, 1), 
+      theme(legend.justification = c(-0.35, 1), 
             legend.position = c(0, 1),
-            legend.box.margin=margin(c(35, 50, 50, 40))) +
-      scale_colour_colorblind("", 
-                          breaks = c("cumul_desc", "cumul_spp", "cumul_pubs"),
+            legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.title = element_blank(),
+            legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      scale_colour_colorblind(breaks = c("cumul_desc", "cumul_spp", "cumul_pubs"),
                           labels = c("all descriptions", "new species", " publications"))
 
 phyla_figure <- ggplot(phyla_overview, aes(Phylum, Total, fill = Data)) + 
-      geom_bar(stat="identity", position="dodge", color="black") + 
-      coord_flip() +
-      theme(legend.justification = c(1, 1), 
-            legend.position = c(1, 1),
-            legend.box.margin=margin(c(50, 50, 50, 50)),
-            legend.title = element_blank()) +
+      geom_bar(stat="identity", position="stack", color="black") + 
+      theme(legend.justification = c(-0.35, 1), 
+            legend.position = c(0, 1),
+            legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.title = element_blank(),
+            axis.text.x = element_text(angle = 45, hjust = 1),
+            legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      geom_text(aes(label = perc, y = ypos, col = Data), vjust = -0.6,
+                position = ggstance::position_dodgev(height = 1),
+                size = 3.5, fontface='bold') +
       scale_fill_manual(values = c('steelblue', 'pink'),
-                        labels = c('Morphospecies', 'Named species'))
+                        labels = c('Morphospecies', 'Named species')) +
+      scale_color_manual(values = c('steelblue', 'pink'), guide = "none") +
+      ylim(0, 2000); phyla_figure
 
-figure_2 <- descriptions_figure | phyla_figure
+figure_2 <- descriptions_figure / phyla_figure + plot_annotation(tag_levels = 'A')
 
 ggsave(figure_2,
-       filename = 'output-figures/figure_2.png', 
-       width = 20, height = 15, units = 'cm', dpi = 150)
+       filename = 'output-figures/figure_2.tiff', 
+       width = 8.5, height = 10, units = 'in', dpi = 150)
 
 # -----------------------------------------------------------------------------------------------------------------
 # Figure 3: Species accumulation curves for CCZ
