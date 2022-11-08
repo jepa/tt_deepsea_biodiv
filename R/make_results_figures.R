@@ -490,7 +490,7 @@ morph_plot = draw(morph_plot)
 
 # -----------------------------------------------------------------------------------------------------------------
 
-## S FIG HIGHER TAXON RICHNESS INTERPOLATION
+## S FIG HIGHER TAXON RICHNESS EXTRAPOLATION
 
 # log of total number of taxa by taxonomic level- ie no of phlya- to genera - log this and use slope to get a prdicted species no
 
