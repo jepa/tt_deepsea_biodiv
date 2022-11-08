@@ -163,11 +163,37 @@ ggsave(C_taxon_rank,
        width = 8, height = 5, units = 'in', dpi = 150)
 
 # -----------------------------------------------------------------------------------------------------------------
-# NMDS plot for regions
+# Supplement: NMDS plot for regions
 # -----------------------------------------------------------------------------------------------------------------
-CCZ_regions_matrix <- picante::sample2matrix(data_regions) 
+all_taxa_data <- read.csv('data-raw/CCZ_ALL_TAXA_v2_2022-11-08.csv') %>% 
+      mutate(max_depth.start_depth = as.numeric(max_depth.start_depth),
+             count = as.integer(COUNT)) %>% 
+      drop_na()
+depth_quantile <- quantile(all_taxa_data$max_depth.start_depth)
+all_taxa_data$depth_quantile <- NA
+all_taxa_data$depth_quantile[all_taxa_data$max_depth.start_depth <= depth_quantile[1]] <- "0-1667"
+all_taxa_data$depth_quantile[all_taxa_data$max_depth.start_depth > depth_quantile[1] & all_taxa_data$max_depth.start_depth <= depth_quantile[2]] <- "1668-4139"
+all_taxa_data$depth_quantile[all_taxa_data$max_depth.start_depth > depth_quantile[2] & all_taxa_data$max_depth.start_depth <= depth_quantile[3]] <- "4140-4449"
+all_taxa_data$depth_quantile[all_taxa_data$max_depth.start_depth > depth_quantile[3] & all_taxa_data$max_depth.start_depth <= depth_quantile[4]] <- "4450-4888"
+all_taxa_data$depth_quantile[all_taxa_data$max_depth.start_depth > depth_quantile[4] ] <- ">5850"
+
+all_taxa_data <- all_taxa_data %>% 
+      dplyr::select(SITE_STRING_V1, region, depth_quantile, SPECIES, count) %>% 
+      rename(site = SITE_STRING_V1, species = SPECIES)
+all_taxa_data <- all_taxa_data[nzchar(all_taxa_data$site), ]
+all_taxa_data <- all_taxa_data[nzchar(all_taxa_data$species), ]
+
+samplePoints.sp <- all_taxa_data %>% 
+      dplyr::group_by(region, site, depth_quantile, species) %>% 
+      dplyr::summarise(cover = sum(count)) %>%  
+      reshape::cast(.,  region + site + depth_quantile ~ species, value = "cover")
+samplePoints.sp[is.na(samplePoints.sp)] <-  0
+rownames(samplePoints.sp) <- with(samplePoints.sp, paste(region, site, depth_quantile, sep="_"))
 
 
+# -----------------------------------------------------------------------------------------------------------------
+# Supplement: Heatmap of effort
+# -----------------------------------------------------------------------------------------------------------------
 
 
 
