@@ -1,77 +1,107 @@
-library(vegan)
-library(ape)
-library(iNEXT)
-library(picante)
-library(MuMIn)
-library(UpSetR)
-library(lmodel2)
-library(betapart)
-library(fuzzySim)
-library(viridis)
-library(RColorBrewer)
-library(kableExtra)
-library(VennDiagram)
-library(ComplexHeatmap)
-library(estimateR)
-library(knitr)
-library(ade4)
-library(ggfortify)
-library(ggplot2)
-library(viridis)
+# library(vegan)
+# library(ape)
+# library(iNEXT)
+# library(picante)
+# library(MuMIn)
+# library(UpSetR)
+# library(lmodel2)
+# library(betapart)
+# library(fuzzySim)
+# library(viridis)
+# library(RColorBrewer)
+# library(kableExtra)
+# library(VennDiagram)
+# library(ComplexHeatmap)
+# library(estimateR)
+# library(knitr)
+# library(ade4)
+# library(ggfortify)
+# library(ggplot2)
+# library(viridis)
 
-library(vegan)
 library(tidyverse)
-library(iNEXT)
-library(ggthemes)
-theme_set(ggthemes::theme_few(base_size = 12))
+library(patchwork)
+library(vegan)
+
+theme_set(theme_bw(base_size = 12))
 
 # -----------------------------------------------------------------------------------------------------------------
 # Data import
 # -----------------------------------------------------------------------------------------------------------------
-species_descriptions <- read.csv("data-raw/TEMP_papers_table_1980_on_2022-09-21.csv") %>% 
+species_descriptions <- read.csv("data-raw/TEMP_papers_table_1980_on_2022-11-05.csv") %>% 
       pivot_longer(cols = 6:8, names_to = "var", values_to = "number")
-community_matrix <- read.table('data-processed/CCZ_community_matrix.txt')
+phyla_overview <- read.csv("data-raw/TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv")
+specaccum_df <- read.csv('data-processed/CCZ_specaccum_sites.csv')
+CCZ_rarecurve <- read.csv("data-processed/CCZ_rarecurve.csv")
+
+taxon_rank_data <- read.csv("data-raw/temp_log_v2_2022-11-06.csv")
+
 load('data-processed/CCZ_com_matrix_standardised.RData') 
-specaccum_df <- read.csv('data-processed/CCZ_specaccum.csv')
+
+
 
 # -----------------------------------------------------------------------------------------------------------------
-# Figure: Raw data
+# Figure 2: Raw data
 # -----------------------------------------------------------------------------------------------------------------
 descriptions_figure <- ggplot(species_descriptions, aes(x = Year, y = number, colour = var, fill = var)) +
       geom_line(size = 1) +
       labs(x = "Year", y = "Cumulative totals") +
       theme(legend.justification = c(0, 1), 
             legend.position = c(0, 1),
-            legend.box.margin=margin(c(50, 50, 50, 50)))+
+            legend.box.margin=margin(c(35, 50, 50, 40))) +
       scale_colour_colorblind("", 
                           breaks = c("cumul_desc", "cumul_spp", "cumul_pubs"),
-                          labels = c("all descriptions", "new species", " publications")); descriptions_figure
+                          labels = c("all descriptions", "new species", " publications"))
 
-# ggsave(descriptions_figure, filename = 'output-figures/descriptions_figure.jpg', 
-#        width = 15, height = 15, units = 'cm', dpi = 150)
+phyla_figure <- ggplot(phyla_overview, aes(Phylum, Total, fill = Data)) + 
+      geom_bar(stat="identity", position="dodge", color="black") + 
+      coord_flip() +
+      theme(legend.justification = c(1, 1), 
+            legend.position = c(1, 1),
+            legend.box.margin=margin(c(50, 50, 50, 50)),
+            legend.title = element_blank()) +
+      scale_fill_manual(values = c('steelblue', 'pink'),
+                        labels = c('Morphospecies', 'Named species'))
+
+figure_2 <- descriptions_figure | phyla_figure
+
+ggsave(figure_2,
+       filename = 'output-figures/figure_2.png', 
+       width = 20, height = 15, units = 'cm', dpi = 150)
 
 # -----------------------------------------------------------------------------------------------------------------
-# Figure: Family/species accumulation by sampling effort
+# Figure 3: Species accumulation curves for CCZ
 # -----------------------------------------------------------------------------------------------------------------
-specaccum_stand <- specaccum(com_matrix_standardised, method = 'random', permutations = 100)  
-specaccum_stand_df <-  data.frame(sites = specaccum_stand$sites, richness = specaccum_stand$richness, sd = specaccum_stand$sd)
+# A: Sample-based family accumulation 
+# B: Sample-based species accumulation 
+# C: Taxon rank/order versus log of total per taxon order 
+# D: Rarefaction, all sites in CCZ
+A_family_accum <- ggplot()
 
-sample_based_accum <- ggplot(specaccum_df) +
-      geom_ribbon(aes(sites, ymin = richness-sd, ymax = richness + sd), alpha = .3, fill = 'blue') +
+B_species_accum <- ggplot(specaccum_df) +
+      geom_ribbon(aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
       geom_line(aes(sites, richness)) +
-      xlab("Number of samples") +
-      ylab("Species richness"); sample_based_accum
+      xlim(0, 2000) +
+      xlab("Sites") +
+      ylab("Species richness"); B_species_accum
 
-sample_based_accum_stand <- ggplot(specaccum_stand_df) +
-      geom_ribbon(aes(sites, ymin = richness-sd, ymax = richness + sd), alpha = .3, fill = 'blue') +
-      geom_line(aes(sites, richness)) +
-      xlab("Number of samples") +
-      ylab("Species richness"); sample_based_accum_stand
+C_taxon_rank <- ggplot(taxon_rank_data, aes(x = order, y = log)) +
+      geom_point() +
+      geom_smooth(method = "lm", se = F) +
+      ylab("Log of total species per taxon order") +
+      xlab("") +
+      scale_x_continuous(labels = c("Phyla", "Class", "Order", "Family", "Genus")); C_taxon_rank
 
-# -----------------------------------------------------------------------------------------------------------------
-# Figure: Rarefaction curves
-# -----------------------------------------------------------------------------------------------------------------
-# Overall estimate for CZZ
+D_rarefaction_CCZ <- ggplot(CCZ_rarecurve) +
+      geom_line(aes(Individuals, Species), cex = 2, col = "darkred") +
+      xlab("Individuals") +
+      ylab("Rarefied species richness"); D_rarefaction_CCZ
+
+figure_3 <- (A_family_accum | B_species_accum) / (C_taxon_rank | D_rarefaction_CCZ) + plot_annotation(tag_levels = 'A')
+
+ggsave(figure_3,
+       filename = 'output-figures/figure_3.png', 
+       width = 20, height = 20, units = 'cm', dpi = 150)
 
 
 
@@ -179,17 +209,17 @@ data <- read.csv("TEST_LIT+DD_ALL_SPP_V6_CCZ_ONLY_2022-11-05.csv") ## 4488 SPP N
 data.matrix <- sample2matrix(data)
 data.matrix[1:5, 1:5]
 
-species_no <- specnumber(data.matrix)
-raremax <- min(rowSums(data.matrix))
-Srare <- rarefy(data.matrix, raremax)
+species_no <- specnumber(community_matrix_CCZ)
+raremax <- min(rowSums(community_matrix_CCZ))
+Srare <- rarefy(community_matrix_CCZ, raremax)
 plot(species_no, Srare, xlab = "Observed No. of Species", ylab = "Species")
 abline(0, 1)
 
-rarecurve(data.matrix, step = 20, sample = raremax, cex = 1, col = viridis(n=4)[-4], 
+rarecurve(community_matrix_CCZ, step = 20, sample = raremax, cex = 1, col = viridis(n=4)[-4], 
           lwd = 2, lty = c("solid", rep("dashed", 2)), label = F,xlab = "No. of individuals", 
           ylab = "No. of Species", cex.axis = 1)
 # legend("bottomright", legend = rownames(com_mat), col = viridis(n=4)[-4], pch=19, cex = 0.5, y.intersp = 0.8, pt.cex = 1)
-rarecurve(data.matrix, step = 20)
+rarecurve(community_matrix_CCZ, step = 20)
 
 ## estimateR for CCZ only data
 
@@ -366,7 +396,7 @@ data3 <- tapply(data[, "taxonConceptID"], data[, "Phylum"],
 write.csv(data3, "OUTPUT.csv")
 
 ## COMBINED OUTPUTS INTO ONE FILE - ALL PHYLA VERSION
-SUM <- read.csv("TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv")
+SUM <- read.csv("data-raw/TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv")
 
 ## border around bands
 ggplot(SUM, aes(Phylum, Total, fill = Data)) + 
@@ -465,7 +495,7 @@ morph_plot = draw(morph_plot)
 # log of total number of taxa by taxonomic level- ie no of phlya- to genera - log this and use slope to get a prdicted species no
 
 
-data <- read.csv("CCZ_CHECKLIST_2022-11-06.CSV")
+data <- read.csv("data-raw/CCZ_CHECKLIST_2022-11-06.CSV")
 
 ## get total per taxon level- ie total phyla- order-calss-fam-genera recorded
 data2 <- tapply(data[, "scientificName"], data[, "taxonRank"],
