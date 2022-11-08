@@ -45,6 +45,10 @@ Hills_q_CCZ_df <- read.csv('data-processed/Hills_q_CCZ_df.csv') %>%
       filter(size_based.Method != "Observed") %>% 
       mutate(size_based.Method = factor(size_based.Method, levels = c("Rarefaction", "Extrapolation")))
 
+Hills_q0_inc_df <- read.csv('data-processed/Hills_q_0_inc_df.csv') %>% 
+      filter(size_based.Method != "Observed") %>% 
+      mutate(size_based.Method = factor(size_based.Method, levels = c("Rarefaction", "Extrapolation")))
+
 taxon_rank_data <- read.csv("data-raw/temp_log_v2_2022-11-06.csv")
 
 data_regions <- read.csv('data-raw/CCZ_ALL_SPP_DATA_V2_REGION_2022-11-08.csv') %>% 
@@ -95,34 +99,46 @@ ggsave(figure_2,
 # -----------------------------------------------------------------------------------------------------------------
 A_Chao1 <- ggplot(Hills_q_CCZ_df, aes(x = size_based.m, y = size_based.qD, lty = size_based.Method)) +
       geom_line(col = "red", cex = 1) +
-      theme(legend.justification = c(-0.35, 1), 
-            legend.position = c(0, 1),
+      theme(legend.justification = c(0, 1), 
+            legend.position = c(.5, .4),
             legend.box.margin=margin(c(20, 20, 20, 20)),
             legend.title = element_blank(),
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
-      xlab("Number of Individuals") +
+      xlab("Individuals") +
       ylab("Species diversity") +
       scale_y_continuous(breaks = seq(0, 5000, 1000)); A_Chao1
 
-B_Chao2 <- ggplot()
+B_rarefaction_CCZ <- ggplot(CCZ_rarecurve) +
+      geom_line(aes(Individuals, Species), cex = 2, col = "darkred") +
+      xlab("Individuals") +
+      ylab("Rarefied species richness"); D_rarefaction_CCZ
 
-C_species_accum <- ggplot(specaccum_df) +
+C_Chao2 <- ggplot(Hills_q0_inc_df, aes(x = size_based.t, y = size_based.qD, lty = size_based.Method)) +
+      geom_ribbon(aes(ymin = size_based.qD.LCL, ymax = size_based.qD.UCL), alpha = 0.3, show.legend = FALSE) +      
+      geom_line(col = "red", cex = 1) +
+      theme(legend.justification = c(0, 1), 
+            legend.position = c(.5, .4),
+            legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.title = element_blank(),
+            legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      xlab("Sites") +
+      ylab("Species diversity") +
+      scale_y_continuous(breaks = seq(0, 5000, 1000)); B_Chao2
+
+D_species_accum <- ggplot(specaccum_df) +
       geom_ribbon(aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
       geom_line(aes(sites, richness)) +
       xlim(0, 2000) +
       xlab("Sites") +
       ylab("Species richness"); B_species_accum
 
-D_rarefaction_CCZ <- ggplot(CCZ_rarecurve) +
-      geom_line(aes(Individuals, Species), cex = 2, col = "darkred") +
-      xlab("Individuals") +
-      ylab("Rarefied species richness"); D_rarefaction_CCZ
 
-figure_3 <- (A_family_accum | B_species_accum) / (C_taxon_rank | D_rarefaction_CCZ) + plot_annotation(tag_levels = 'A')
+
+figure_3 <- (A_Chao1 | B_rarefaction_CCZ) / (C_Chao2 | D_species_accum) + plot_annotation(tag_levels = 'A')
 
 ggsave(figure_3,
-       filename = 'output-figures/figure_3.png', 
-       width = 20, height = 20, units = 'cm', dpi = 150)
+       filename = 'output-figures/figure_3.tiff', 
+       width = 8.5, height = 8.5, units = 'in', dpi = 150)
 
 
 
@@ -332,7 +348,7 @@ test <- ChaoRichness((inc_freq))
 write.csv(as.data.frame(Hills_q_0_inc, "OUTPUT.csv"))
 #Error in as.data.frame.default(Hills_q_0_inc, "OUTPUT.csv") : cannot coerce class ‘"iNEXT"’ to a data.frame
 
-plot <- ggiNEXT(Hills_q_0_inc, type = 1)
+plot <- ggiNEXT(Hills_q_0_inc_CCZ, type = 1)
 plot <- ggiNEXT(Hills_q_0_inc, type = 1) + theme_clean()
 
 ##################################

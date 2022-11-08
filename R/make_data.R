@@ -9,7 +9,7 @@ library(iNEXT)
 # -----------------------------------------------------------------------------------------------------------------
 # Raw data
 # -----------------------------------------------------------------------------------------------------------------
-data_all_species <- read.csv("data-raw/CCZ_ALL_SPP_DATA_v2_2022-11-06.csv", header = T, sep = ",", fileEncoding = "latin1")[-2, ] %>% 
+data_all_species <- read.csv("data-raw/CCZ_ALL_SPP_DATA_v3_2022-11-08.csv", header = T, sep = ",", fileEncoding = "latin1")[-2, ] %>% 
       drop_na(Abundance)
 data_all_species <- data_all_species[nzchar(data_all_species$Site), ]
 data_all_species <- data_all_species[nzchar(data_all_species$Species), ]
@@ -87,10 +87,11 @@ com_matT <- t(community_matrix_CCZ)
 Hills_q_CCZ <- iNEXT(com_matT, q=0, datatype = "abundance", nboot = 2)
 Hills_q_CCZ_df <- as.data.frame(Hills_q_CCZ$iNextEst)
 
-com_mat_inc <- community_matrix_CCZ
-com_mat_inc[which(com_mat_inc>1)] <- 1
-inc_freq <- (t(com_mat_inc))
+com_mat_inc <- community_matrix
+com_mat_inc <- ifelse(com_mat_inc > 0, 1, 0)
+inc_freq <- as.incfreq(t(com_mat_inc))
 Hills_q_0_inc_CCZ <- iNEXT(inc_freq, q=0, datatype = "incidence_freq", nboot = 2)
+Hills_q_0_inc_df <- as.data.frame(Hills_q_0_inc_CCZ$iNextEst)
 
 # -----------------------------------------------------------------------------------------------------------------
 # Export
@@ -102,6 +103,7 @@ write.table(community_matrix_CCZ, file = 'data-processed/community_matrix_CCZ.tx
 write.csv(specaccum_sites_df, file = 'data-processed/CCZ_specaccum_sites.csv')
 write.csv(CCZ_rarecurve, file = 'data-processed/CCZ_rarecurve.csv')
 write.csv(Hills_q_CCZ_df, file = 'data-processed/Hills_q_CCZ_df.csv')
+write.csv(Hills_q_0_inc_df, file = 'data-processed/Hills_q_0_inc_df.csv')
 
 # writeOGR(intersectGrid, dsn = 'data-processed', layer = 'CCZ_grid_5degree', driver = "ESRI Shapefile")
 # write.csv(data_merged, file = 'data-processed/CCZ_specdata_pseudoeffort.csv')
