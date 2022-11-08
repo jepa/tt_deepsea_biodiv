@@ -19,7 +19,8 @@ data_CCZ_only <- data_all_species %>% mutate(site = "CCZ")
 # Species data with coords etc.
 data_coords <- read.csv('data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv') %>% 
       filter(!is.na(LONGITUDE), !is.na(LATITUDE)) %>% 
-      rename(lat = LATITUDE, 
+      rename(site = SITE, 
+             lat = LATITUDE, 
              long = LONGITUDE) 
 
 # -----------------------------------------------------------------------------------------------------------------
@@ -50,10 +51,10 @@ rownames(community_matrix_CCZ) <- community_matrix_CCZ$site
 community_matrix_CCZ <- community_matrix_CCZ[, !(names(community_matrix_CCZ) %in% "site")]
 
 # By grid, abundance standardised by pseudo-effort (number of sampling events in grid)
-sites_df <- data.frame(long = data_coords$long, lat = data_coords$lat, sample_unit = data_coords$SITE) %>% 
+sites_df <- data.frame(long = data_coords$long, lat = data_coords$lat, site = data_coords$site) %>% 
       unique()
 
-sites_spdf <- SpatialPointsDataFrame(coords = cbind(sites_df$long, sites_df$lat), data = data.frame(sites_df$sample_unit))
+sites_spdf <- SpatialPointsDataFrame(coords = cbind(sites_df$long, sites_df$lat), data = data.frame(sites_df$site))
 proj4string(sites_spdf) <- CRS("+init=epsg:4326")
 
 CCZ_outline <- readWKT(text = "POLYGON ((-160.3477 12.5906, -154.0898 -5.4997, 
@@ -64,27 +65,38 @@ gridPolygon <- rasterToPolygons(grid)
 gridPolygon$grid_ID <- 1:nrow(gridPolygon)
 grid_clipped <- raster::intersect(gridPolygon, CCZ_outline)
 intersectGrid <- gridPolygon[gridPolygon$grid_ID %in% grid_clipped$grid_ID, ]
-
+test <- point.in.poly(sites_spdf, intersectGrid)
 plot(CCZ_outline)
-plot(intersectGrid, add = T)
+plot(grid_clipped, add = T)
 plot(sites_spdf, add = T)
 
 points_intersected <- data.frame(point.in.poly(sites_spdf, intersectGrid)) %>% 
-      rename(site_ID = sites_df.site_ID, long = coords.x1, lat = coords.x2) %>% 
-      dplyr::select(site_ID, long, lat, grid_ID) %>% 
+      rename(site = sites_df.site, long = coords.x1, lat = coords.x2) %>% 
+      dplyr::select(site, long, lat, grid_ID) %>% 
       group_by(grid_ID) %>% 
-      mutate(pseudo_effort = length(site_ID))
+      mutate(pseudo_effort = length(site))
 
-data_merged <- merge(points_intersected, data_coords, by = c("site_ID", "long", "lat"), all.y = T)
+data_merged <- merge(points_intersected, data_coords, by = c("site", "long", "lat"), all.y = T)
 
 # Community matrix by grid, standardised abundance
 com_matrix_standardised <- data_merged %>% 
-      dplyr::group_by(grid_ID, NAME) %>% 
-      dplyr::summarise(cover = sum(individualCount)/pseudo_effort) %>%  
+      dplyr::group_by(grid_ID, SPECIES) %>% 
+      dplyr::summarise(cover = sum(ABUNDANCE)/pseudo_effort) %>%  
       unique() %>% 
-      reshape::cast(.,  grid_ID ~ NAME, value = "cover")
+      reshape::cast(.,  grid_ID ~ SPECIES, value = "cover")
 com_matrix_standardised[is.na(com_matrix_standardised)] <-  0
 rownames(com_matrix_standardised) <- com_matrix_standardised$grid_ID
+
+# -----------------------------------------------------------------------------------------------------------------
+# Species curve data - some take long to compile
+# -----------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 # -----------------------------------------------------------------------------------------------------------------
 # Species curve data - some take long to compile
@@ -110,7 +122,7 @@ Hills_q_0_inc_CCZ <- iNEXT(inc_freq, q=0, datatype = "incidence_freq", nboot = 2
 write.table(community_matrix, file = 'data-processed/CCZ_community_matrix.txt')
 write.table(community_matrix_CCZ, file = 'data-processed/community_matrix_CCZ.txt')
 
-# save(com_matrix_standardised, file = 'data-processed/CCZ_com_matrix_standardised.RData')  
+save(com_matrix_standardised, file = 'data-processed/CCZ_com_matrix_standardised.RData')  
 write.csv(specaccum_sites_df, file = 'data-processed/CCZ_specaccum_sites.csv')
 write.csv(CCZ_rarecurve, file = 'data-processed/CCZ_rarecurve.csv')
 save(Hills_q_CCZ, file = 'data-processed/Hills_q_CCZ.RData')

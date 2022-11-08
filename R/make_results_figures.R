@@ -128,10 +128,8 @@ C_Chao2 <- ggplot(Hills_q0_inc_df, aes(x = size_based.t, y = size_based.qD, lty 
 D_species_accum <- ggplot(specaccum_sites_df) +
       geom_ribbon(aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
       geom_line(aes(sites, richness)) +
-      xlim(0, 2000) +
       xlab("Sites") +
       ylab("Species richness"); D_species_accum
-
 
 
 figure_3 <- (A_Chao1 | B_rarefaction_CCZ) / (C_Chao2 | D_species_accum) + plot_annotation(tag_levels = 'A')
