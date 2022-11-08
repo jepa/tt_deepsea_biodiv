@@ -122,15 +122,25 @@ ggsave(figure_3,
 
 
 
+# -----------------------------------------------------------------------------------------------------------------
+# Higher taxon richness extrapolation
+# -----------------------------------------------------------------------------------------------------------------
+mod <- lm(log ~ order, data = taxon_rank_data)
+taxon_rank_data <- rbind(taxon_rank_data, data.frame(order = 6, log = predict(mod, newdata = data.frame(order = 6), type = "response")))
+taxon_rank_data$ID <- c(rep("obs", 5), "pred")
 
-
-C_taxon_rank <- ggplot(taxon_rank_data, aes(x = order, y = log)) +
-      geom_point() +
-      geom_smooth(method = "lm", se = F) +
-      ylab("Log of total species per taxon order") +
+C_taxon_rank <- ggplot(taxon_rank_data, aes(x = order, y = log, col = ID)) +
+      geom_point(cex = 3) +
+      geom_smooth(method = "lm", se = F, col = "orange", lty = 2, alpha = 0.5) +
+      ylab("Log total") +
       xlab("") +
-      scale_x_continuous(labels = c("Phyla", "Class", "Order", "Family", "Genus")); C_taxon_rank
+      theme(legend.title = element_blank()) +
+      scale_x_continuous(breaks = 1:6, labels = c("Phyla", "Class", "Order", "Family", "Genus", "Species")) +
+      scale_color_manual(values = c("black", "orange"), labels = c("observed", "predicted")); C_taxon_rank
 
+ggsave(C_taxon_rank,
+       filename = 'output-figures/taxa_int.tiff', 
+       width = 8, height = 5, units = 'in', dpi = 150)
 
 # -----------------------------------------------------------------------------------------------------------------
 # Mu's hodge podge code corner of doom
