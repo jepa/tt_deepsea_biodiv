@@ -29,16 +29,16 @@ theme_set(theme_bw(base_size = 12))
 # -----------------------------------------------------------------------------------------------------------------
 # Data import
 # -----------------------------------------------------------------------------------------------------------------
-species_descriptions <- read.csv("data-raw/TEMP_papers_table_1980_on_2022-11-05.csv") %>% 
+species_descriptions <- read.csv("data-raw/ARCHIVED_DATA/TEMP_papers_table_1980_on_2022-11-05.csv") %>% 
       pivot_longer(cols = 6:8, names_to = "var", values_to = "number")
-phyla_overview <- read.csv("data-raw/TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv") %>% 
+phyla_overview <- read.csv("data-raw/ARCHIVED_DATA/TEMP_SUMMARY_FIG2_ALL_PHYLA_2022-11-05.csv") %>% 
       group_by(Phylum) %>% 
       mutate(total_phylum = sum(Total)) %>% 
       group_by(Data) %>% 
       mutate(perc = paste0(round((Total/total_phylum)*100), "%"))
 phyla_overview$ypos <- ifelse(phyla_overview$Data == "named species", phyla_overview$total_phylum, phyla_overview$total_phylum + 70)
 
-specaccum_df <- read.csv('data-processed/CCZ_specaccum_sites.csv')
+specaccum_sites_df <- read.csv('data-processed/CCZ_specaccum_sites.csv')
 CCZ_rarecurve <- read.csv("data-processed/CCZ_rarecurve.csv")
 
 Hills_q_CCZ_df <- read.csv('data-processed/Hills_q_CCZ_df.csv') %>% 
@@ -49,7 +49,7 @@ Hills_q0_inc_df <- read.csv('data-processed/Hills_q_0_inc_df.csv') %>%
       filter(size_based.Method != "Observed") %>% 
       mutate(size_based.Method = factor(size_based.Method, levels = c("Rarefaction", "Extrapolation")))
 
-taxon_rank_data <- read.csv("data-raw/temp_log_v2_2022-11-06.csv")
+taxon_rank_data <- read.csv("data-raw/ARCHIVED_DATA/temp_log_v2_2022-11-06.csv")
 
 data_regions <- read.csv('data-raw/CCZ_ALL_SPP_DATA_V2_REGION_2022-11-08.csv') %>% 
       drop_na()
@@ -83,9 +83,9 @@ phyla_figure <- ggplot(phyla_overview, aes(Phylum, Total, fill = Data)) +
       geom_text(aes(label = perc, y = ypos, col = Data), vjust = -0.6,
                 position = ggstance::position_dodgev(height = 1),
                 size = 3.5, fontface='bold') +
-      scale_fill_manual(values = c('steelblue', 'pink'),
+      scale_fill_manual(values = c('steelblue', 'coral2'),
                         labels = c('Morphospecies', 'Named species')) +
-      scale_color_manual(values = c('steelblue', 'pink'), guide = "none") +
+      scale_color_manual(values = c('steelblue', 'coral2'), guide = "none") +
       ylim(0, 2000); phyla_figure
 
 figure_2 <- descriptions_figure / phyla_figure + plot_annotation(tag_levels = 'A')
@@ -98,7 +98,7 @@ ggsave(figure_2,
 # Figure 3: Species accumulation curves for CCZ
 # -----------------------------------------------------------------------------------------------------------------
 A_Chao1 <- ggplot(Hills_q_CCZ_df, aes(x = size_based.m, y = size_based.qD, lty = size_based.Method)) +
-      geom_line(col = "red", cex = 1) +
+      geom_line(col = "coral2", cex = 1) +
       theme(legend.justification = c(0, 1), 
             legend.position = c(.5, .4),
             legend.box.margin=margin(c(20, 20, 20, 20)),
@@ -109,13 +109,13 @@ A_Chao1 <- ggplot(Hills_q_CCZ_df, aes(x = size_based.m, y = size_based.qD, lty =
       scale_y_continuous(breaks = seq(0, 5000, 1000)); A_Chao1
 
 B_rarefaction_CCZ <- ggplot(CCZ_rarecurve) +
-      geom_line(aes(Individuals, Species), cex = 2, col = "darkred") +
+      geom_line(aes(Individuals, Species), cex = 1, col = "coral2") +
       xlab("Individuals") +
-      ylab("Rarefied species richness"); D_rarefaction_CCZ
+      ylab("Rarefied species richness"); B_rarefaction_CCZ
 
 C_Chao2 <- ggplot(Hills_q0_inc_df, aes(x = size_based.t, y = size_based.qD, lty = size_based.Method)) +
       geom_ribbon(aes(ymin = size_based.qD.LCL, ymax = size_based.qD.UCL), alpha = 0.3, show.legend = FALSE) +      
-      geom_line(col = "red", cex = 1) +
+      geom_line(col = "coral2", cex = 1) +
       theme(legend.justification = c(0, 1), 
             legend.position = c(.5, .4),
             legend.box.margin=margin(c(20, 20, 20, 20)),
@@ -123,14 +123,14 @@ C_Chao2 <- ggplot(Hills_q0_inc_df, aes(x = size_based.t, y = size_based.qD, lty 
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Sites") +
       ylab("Species diversity") +
-      scale_y_continuous(breaks = seq(0, 5000, 1000)); B_Chao2
+      scale_y_continuous(breaks = seq(0, 5000, 1000)); C_Chao2
 
-D_species_accum <- ggplot(specaccum_df) +
+D_species_accum <- ggplot(specaccum_sites_df) +
       geom_ribbon(aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
       geom_line(aes(sites, richness)) +
       xlim(0, 2000) +
       xlab("Sites") +
-      ylab("Species richness"); B_species_accum
+      ylab("Species richness"); D_species_accum
 
 
 
@@ -151,12 +151,12 @@ taxon_rank_data$ID <- c(rep("obs", 5), "pred")
 
 C_taxon_rank <- ggplot(taxon_rank_data, aes(x = order, y = log, col = ID)) +
       geom_point(cex = 3) +
-      geom_smooth(method = "lm", se = F, col = "orange", lty = 2, alpha = 0.5) +
+      geom_smooth(method = "lm", se = F, col = "coral2", lty = 2, alpha = 0.5) +
       ylab("Log total") +
       xlab("") +
       theme(legend.title = element_blank()) +
       scale_x_continuous(breaks = 1:6, labels = c("Phyla", "Class", "Order", "Family", "Genus", "Species")) +
-      scale_color_manual(values = c("black", "orange"), labels = c("observed", "predicted")); C_taxon_rank
+      scale_color_manual(values = c("black", "coral2"), labels = c("observed", "predicted")); C_taxon_rank
 
 ggsave(C_taxon_rank,
        filename = 'output-figures/taxa_int.tiff', 
