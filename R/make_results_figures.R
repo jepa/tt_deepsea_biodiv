@@ -70,7 +70,7 @@ descriptions_figure <- ggplot(species_descriptions, aes(x = Year, y = number, co
             legend.title = element_blank(),
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       scale_colour_colorblind(breaks = c("cumul_desc", "cumul_spp", "cumul_pubs"),
-                          labels = c("all descriptions", "new species", " publications"))
+                          labels = c("All descriptions", "New species", "Publications"))
 
 phyla_figure <- ggplot(phyla_overview, aes(Phylum, Total, fill = Data)) + 
       geom_bar(stat="identity", position="stack", color="black") + 
