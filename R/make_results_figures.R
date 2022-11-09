@@ -38,6 +38,7 @@ phyla_overview <- read.csv("data-raw/ARCHIVED_DATA/TEMP_SUMMARY_FIG2_ALL_PHYLA_2
       mutate(perc = paste0(round((Total/total_phylum)*100), "%"))
 phyla_overview$ypos <- ifelse(phyla_overview$Data == "named species", phyla_overview$total_phylum, phyla_overview$total_phylum + 70)
 
+community_matrix_CCZ <- read.table('data-processed/community_matrix_CCZ.txt')
 specaccum_sites_df <- read.csv('data-processed/CCZ_specaccum_sites.csv')
 CCZ_rarecurve <- read.csv("data-processed/CCZ_rarecurve.csv")
 
@@ -153,6 +154,7 @@ ggsave(figure_3,
 mod <- lm(log ~ order, data = taxon_rank_data)
 taxon_rank_data <- rbind(taxon_rank_data, data.frame(order = 6, log = predict(mod, newdata = data.frame(order = 6), type = "response")))
 taxon_rank_data$ID <- c(rep("obs", 5), "pred")
+taxon_rank_data$number <- exp(taxon_rank_data$log)
 
 C_taxon_rank <- ggplot(taxon_rank_data, aes(x = order, y = log, col = ID)) +
       geom_point(cex = 3) +
@@ -324,7 +326,7 @@ rarecurve(community_matrix_CCZ, step = 20)
 
 ## estimateR for CCZ only data
 
-test <- estimateR(data.matrix) 
+test <- estimateR(community_matrix_CCZ) 
 
 
 ############################

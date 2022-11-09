@@ -99,10 +99,11 @@ colnames(CCZ_rarecurve)[1] <- "Species"
 
 com_matT <- as.matrix(t(community_matrix_CCZ))
 Hills_q_CCZ <- iNEXT(com_matT, q = 0, datatype = "abundance", nboot = 2)
-
+ChaoRichness((com_matT))
 com_mat_inc <- community_matrix
 com_mat_inc <- ifelse(com_mat_inc > 0, 1, 0)
 inc_freq <- as.incfreq(t(com_mat_inc))
+ChaoRichness((inc_freq))
 Hills_q_0_inc_CCZ <- iNEXT(inc_freq, q=0, datatype = "incidence_freq", nboot = 2)
 
 # -----------------------------------------------------------------------------------------------------------------
