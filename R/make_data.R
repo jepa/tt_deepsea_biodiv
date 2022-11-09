@@ -90,17 +90,6 @@ rownames(com_matrix_standardised) <- com_matrix_standardised$grid_ID
 # -----------------------------------------------------------------------------------------------------------------
 # Species curve data - some take long to compile
 # -----------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-# -----------------------------------------------------------------------------------------------------------------
-# Species curve data - some take long to compile
-# -----------------------------------------------------------------------------------------------------------------
 specaccum_sites <- specaccum(community_matrix, method = 'random', permutations = 100)  
 specaccum_sites_df <-  data.frame(sites = specaccum_sites$sites, richness = specaccum_sites$richness, sd = specaccum_sites$sd)
 

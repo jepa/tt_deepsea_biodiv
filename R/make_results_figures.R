@@ -84,7 +84,7 @@ phyla_figure <- ggplot(phyla_overview, aes(Phylum, Total, fill = Data)) +
                 position = ggstance::position_dodgev(height = 1),
                 size = 3.5, fontface='bold') +
       scale_fill_manual(values = c('steelblue', 'coral2'),
-                        labels = c('Morphospecies', 'Named species')) +
+                        labels = c('Unnamed taxa', 'Named species')) +
       scale_color_manual(values = c('steelblue', 'coral2'), guide = "none") +
       ylim(0, 2000); phyla_figure
 
