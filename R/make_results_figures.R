@@ -69,8 +69,9 @@ descriptions_figure <- ggplot(species_descriptions, aes(x = Year, y = number, co
             legend.box.margin=margin(c(20, 20, 20, 20)),
             legend.title = element_blank(),
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
-      scale_colour_colorblind(breaks = c("cumul_desc", "cumul_spp", "cumul_pubs"),
-                          labels = c("All descriptions", "New species", "Publications"))
+      scale_color_manual(breaks = c("cumul_desc", "cumul_spp", "cumul_pubs"),
+                         labels = c("All descriptions", "New species", "Publications"),
+                         values = c('black', 'steelblue', 'coral2'))
 
 phyla_figure <- ggplot(phyla_overview, aes(Phylum, Total, fill = Data)) + 
       geom_bar(stat="identity", position="stack", color="black") + 
@@ -93,6 +94,12 @@ figure_2 <- descriptions_figure / phyla_figure + plot_annotation(tag_levels = 'A
 ggsave(figure_2,
        filename = 'output-figures/figure_2.tiff', 
        width = 8.5, height = 10, units = 'in', dpi = 150)
+ggsave(descriptions_figure,
+       filename = 'output-figures/descriptions_figure.tiff', 
+       width = 8, height = 6, units = 'in', dpi = 150)
+ggsave(phyla_figure,
+       filename = 'output-figures/phyla_figure.tiff', 
+       width = 8, height = 6, units = 'in', dpi = 150)
 
 # -----------------------------------------------------------------------------------------------------------------
 # Figure 3: Species accumulation curves for CCZ
