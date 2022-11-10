@@ -141,7 +141,7 @@ C_Chao2 <- ggplot() +
             legend.title = element_blank(),
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Sites") +
-      ylab("Species Richnessy") +
+      ylab("Species Richness") +
       scale_y_continuous(breaks = seq(0, 5000, 1000)); C_Chao2
 
 D_species_accum <- ggplot(specaccum_sites_df) +
