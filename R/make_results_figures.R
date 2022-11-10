@@ -38,6 +38,7 @@ phyla_overview <- read.csv("data-raw/ARCHIVED_DATA/TEMP_SUMMARY_FIG2_ALL_PHYLA_2
       mutate(perc = paste0(round((Total/total_phylum)*100), "%"))
 phyla_overview$ypos <- ifelse(phyla_overview$Data == "named species", phyla_overview$total_phylum, phyla_overview$total_phylum + 70)
 
+community_matrix_CCZ <- read.table('data-processed/community_matrix_CCZ.txt')
 specaccum_sites_df <- read.csv('data-processed/CCZ_specaccum_sites.csv')
 CCZ_rarecurve <- read.csv("data-processed/CCZ_rarecurve.csv")
 
@@ -104,55 +105,67 @@ ggsave(phyla_figure,
 # -----------------------------------------------------------------------------------------------------------------
 # Figure 3: Species accumulation curves for CCZ
 # -----------------------------------------------------------------------------------------------------------------
-A_Chao1 <- ggplot(Hills_q_CCZ_df, aes(x = size_based.m, y = size_based.qD, lty = size_based.Method)) +
-      geom_line(col = "coral2", cex = 1) +
+A_Chao1 <- ggplot() +
+      geom_line(data = Hills_q_CCZ_df, aes(x = size_based.m, y = size_based.qD, lty = size_based.Method),
+                col = "coral2", cex = 1) +
+      # geom_line(data = CCZ_rarecurve, aes(Individuals, Species), 
+      #           cex = 1, col = "green") +
       theme(legend.justification = c(0, 1), 
             legend.position = c(.5, .4),
             legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.margin = margin(1, 1, 1, 1),
+            legend.spacing.x = unit(0, "mm"),
+            legend.spacing.y = unit(0, "mm"),
             legend.title = element_blank(),
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Individuals") +
-      ylab("Species diversity") +
+      ylab("Species Richness") +
       scale_y_continuous(breaks = seq(0, 5000, 1000)); A_Chao1
 
 B_rarefaction_CCZ <- ggplot(CCZ_rarecurve) +
       geom_line(aes(Individuals, Species), cex = 1, col = "coral2") +
       xlab("Individuals") +
-      ylab("Rarefied species richness"); B_rarefaction_CCZ
+      ylab("Species Richness"); B_rarefaction_CCZ
 
-C_Chao2 <- ggplot(Hills_q0_inc_df, aes(x = size_based.t, y = size_based.qD, lty = size_based.Method)) +
-      geom_ribbon(aes(ymin = size_based.qD.LCL, ymax = size_based.qD.UCL), alpha = 0.3, show.legend = FALSE) +      
-      geom_line(col = "coral2", cex = 1) +
+C_Chao2 <- ggplot() +
+      # geom_ribbon(data = specaccum_sites_df, aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
+      # geom_line(data = specaccum_sites_df, aes(sites, richness), col = "blue") +
+      geom_ribbon(data = Hills_q0_inc_df, aes(x = size_based.t, ymin = size_based.qD.LCL, ymax = size_based.qD.UCL), alpha = 0.3, show.legend = FALSE) +      
+      geom_line(data = Hills_q0_inc_df, aes(x = size_based.t, y = size_based.qD, lty = size_based.Method), col = "coral2", cex = 1) +
       theme(legend.justification = c(0, 1), 
             legend.position = c(.5, .4),
             legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.margin = margin(1, 1, 1, 1),
+            legend.spacing.x = unit(0, "mm"),
+            legend.spacing.y = unit(0, "mm"),
             legend.title = element_blank(),
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Sites") +
-      ylab("Species diversity") +
+      ylab("Species Richnessy") +
       scale_y_continuous(breaks = seq(0, 5000, 1000)); C_Chao2
 
 D_species_accum <- ggplot(specaccum_sites_df) +
       geom_ribbon(aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
       geom_line(aes(sites, richness)) +
       xlab("Sites") +
-      ylab("Species richness"); D_species_accum
+      ylab("Species Richness"); D_species_accum
 
 
 figure_3 <- (A_Chao1 | B_rarefaction_CCZ) / (C_Chao2 | D_species_accum) + plot_annotation(tag_levels = 'A')
 
 ggsave(figure_3,
        filename = 'output-figures/figure_3.tiff', 
-       width = 8.5, height = 8.5, units = 'in', dpi = 150)
+       width = 8.5, height = 7, units = 'in', dpi = 150)
 
 
 
-# -----------------------------------------------------------------------------------------------------------------
+ # -----------------------------------------------------------------------------------------------------------------
 # Higher taxon richness extrapolation
 # -----------------------------------------------------------------------------------------------------------------
 mod <- lm(log ~ order, data = taxon_rank_data)
 taxon_rank_data <- rbind(taxon_rank_data, data.frame(order = 6, log = predict(mod, newdata = data.frame(order = 6), type = "response")))
 taxon_rank_data$ID <- c(rep("obs", 5), "pred")
+taxon_rank_data$number <- exp(taxon_rank_data$log)
 
 C_taxon_rank <- ggplot(taxon_rank_data, aes(x = order, y = log, col = ID)) +
       geom_point(cex = 3) +
@@ -482,7 +495,7 @@ rarecurve(data.matrix, step = 20)
 
 ## estimateR for CCZ only data
 
-test <- estimateR(data.matrix) 
+test <- estimateR(community_matrix_CCZ) 
 
 
 ############################
