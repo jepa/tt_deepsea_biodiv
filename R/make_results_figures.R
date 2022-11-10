@@ -105,8 +105,8 @@ ggsave(phyla_figure,
 # -----------------------------------------------------------------------------------------------------------------
 # Figure 3: Species accumulation curves for CCZ
 # -----------------------------------------------------------------------------------------------------------------
-A_Chao1 <- ggplot() +
-      geom_line(data = Hills_q_CCZ_df, aes(x = size_based.m, y = size_based.qD, lty = size_based.Method),
+A_Chao1 <- ggplot(Hills_q_CCZ_df, aes(x = size_based.m)) +
+      geom_line(aes(y = size_based.qD, lty = size_based.Method),
                 col = "coral2", cex = 1) +
       # geom_line(data = CCZ_rarecurve, aes(Individuals, Species), 
       #           cex = 1, col = "green") +
@@ -151,15 +151,15 @@ D_species_accum <- ggplot(specaccum_sites_df) +
       ylab("Species Richness"); D_species_accum
 
 
-figure_3 <- (A_Chao1 | B_rarefaction_CCZ) / (C_Chao2 | D_species_accum) + plot_annotation(tag_levels = 'A')
+figure_3 <- (A_Chao1 / C_Chao2)  + plot_annotation(tag_levels = 'A')
 
 ggsave(figure_3,
-       filename = 'output-figures/figure_3.tiff', 
-       width = 8.5, height = 7, units = 'in', dpi = 150)
+       filename = 'output-figures/figure_3_AC.tiff', 
+       width = 8.5, height = 8, units = 'in', dpi = 150)
 
 
 
- # -----------------------------------------------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------------------------------------------
 # Higher taxon richness extrapolation
 # -----------------------------------------------------------------------------------------------------------------
 mod <- lm(log ~ order, data = taxon_rank_data)
