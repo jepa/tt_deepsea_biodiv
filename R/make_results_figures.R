@@ -113,7 +113,9 @@ A_Chao1 <- ggplot() +
       theme(legend.justification = c(0, 1), 
             legend.position = c(.5, .4),
             legend.box.margin=margin(c(20, 20, 20, 20)),
-            legend.margin=margin(c(1, 1, 1, 1)),
+            legend.margin = margin(1, 1, 1, 1),
+            legend.spacing.x = unit(0, "mm"),
+            legend.spacing.y = unit(0, "mm"),
             legend.title = element_blank(),
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Individuals") +
@@ -126,13 +128,16 @@ B_rarefaction_CCZ <- ggplot(CCZ_rarecurve) +
       ylab("Species Richness"); B_rarefaction_CCZ
 
 C_Chao2 <- ggplot() +
-      geom_ribbon(data = specaccum_sites_df, aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
+      # geom_ribbon(data = specaccum_sites_df, aes(sites, ymin = richness - 1.96*sd, ymax = richness + 1.96*sd), alpha = .3, fill = 'blue') +
+      # geom_line(data = specaccum_sites_df, aes(sites, richness), col = "blue") +
       geom_ribbon(data = Hills_q0_inc_df, aes(x = size_based.t, ymin = size_based.qD.LCL, ymax = size_based.qD.UCL), alpha = 0.3, show.legend = FALSE) +      
-      # geom_line(data = Hills_q0_inc_df, aes(x = size_based.t, y = size_based.qD, lty = size_based.Method), col = "coral2", cex = 1) +
+      geom_line(data = Hills_q0_inc_df, aes(x = size_based.t, y = size_based.qD, lty = size_based.Method), col = "coral2", cex = 1) +
       theme(legend.justification = c(0, 1), 
             legend.position = c(.5, .4),
             legend.box.margin=margin(c(20, 20, 20, 20)),
-            legend.margin=margin(c(1, 1, 1, 1)),
+            legend.margin = margin(1, 1, 1, 1),
+            legend.spacing.x = unit(0, "mm"),
+            legend.spacing.y = unit(0, "mm"),
             legend.title = element_blank(),
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Sites") +

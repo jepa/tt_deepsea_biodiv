@@ -9,12 +9,17 @@ library(iNEXT)
 # -----------------------------------------------------------------------------------------------------------------
 # Raw data
 # -----------------------------------------------------------------------------------------------------------------
-data_all_species <- read.csv("data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv", header = T, sep = ",", fileEncoding = "latin1") %>% 
-      drop_na(ABUNDANCE)
-data_all_species <- data_all_species[nzchar(data_all_species$SITE), ]
-data_all_species <- data_all_species[nzchar(data_all_species$SPECIES), ]
+data_all_species <- read.csv("data-raw/temp_spp_v1_abundance_2022-11-08.csv", header = T, sep = ",", fileEncoding = "latin1") %>% 
+      drop_na(Abundance)
+data_all_species <- data_all_species[nzchar(data_all_species$Site), ]
+data_all_species <- data_all_species[nzchar(data_all_species$Species), ]
 
-data_CCZ_only <- data_all_species %>% mutate(site = "CCZ")
+data_all_species_pres <- read.csv("data-raw/temp_spp_v1_presence_2022-11-08.csv", header = T, sep = ",", fileEncoding = "latin1") %>% 
+      drop_na(Abundance)
+data_all_species_pres <- data_all_species_pres[nzchar(data_all_species_pres$Site), ]
+data_all_species_pres <- data_all_species_pres[nzchar(data_all_species_pres$Species), ]
+
+data_CCZ_only <- data_all_species %>% mutate(Site = "CCZ")
 
 # Species data with coords etc.
 data_coords <- read.csv('data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv') %>% 
@@ -27,28 +32,32 @@ data_coords <- read.csv('data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv') %>%
 # Make community matrices
 # -----------------------------------------------------------------------------------------------------------------
 # By site
-# community_matrix <- picante::sample2matrix(data_all_species) 
-community_matrix <- data_all_species %>% 
-      dplyr::group_by(SITE, SPECIES) %>% 
-      dplyr::summarise(cover = sum(ABUNDANCE)) %>%  
-      reshape::cast(.,  SITE ~ SPECIES, value = "cover")
-community_matrix[is.na(community_matrix)] <-  0
-rownames(community_matrix) <- community_matrix$SITE
-community_matrix <- community_matrix[, !(names(community_matrix) %in% "SITE")]
+community_matrix <- picante::sample2matrix(data_all_species) 
+community_matrix_pres <- picante::sample2matrix(data_all_species_pres) 
+# community_matrix <- data_all_species %>% 
+#       dplyr::group_by(Site, SPECIES) %>% 
+#       dplyr::summarise(cover = sum(ABUNDANCE)) %>%  
+#       reshape::cast(.,  SITE ~ SPECIES, value = "cover")
+# community_matrix[is.na(community_matrix)] <-  0
+# rownames(community_matrix) <- community_matrix$SITE
+# community_matrix <- community_matrix[, !(names(community_matrix) %in% "SITE")]
 
 empty_sites <- rownames(community_matrix[rowSums(community_matrix) == 0, ])
 community_matrix <- community_matrix[!rownames(community_matrix) %in% empty_sites, ]
-
 length(names(sapply(community_matrix, is.numeric))) == length(colnames(community_matrix))
 
-# community_matrix_CCZ <- picante::sample2matrix(data_CCZ_only) 
-community_matrix_CCZ <- data_CCZ_only %>% 
-dplyr::group_by(site, SPECIES) %>% 
-      dplyr::summarise(cover = sum(ABUNDANCE)) %>%  
-      reshape::cast(.,  site ~ SPECIES, value = "cover")
-community_matrix_CCZ[is.na(community_matrix_CCZ)] <-  0
-rownames(community_matrix_CCZ) <- community_matrix_CCZ$site
-community_matrix_CCZ <- community_matrix_CCZ[, !(names(community_matrix_CCZ) %in% "site")]
+empty_sites <- rownames(community_matrix_pres[rowSums(community_matrix_pres) == 0, ])
+community_matrix_pres <- community_matrix_pres[!rownames(community_matrix_pres) %in% empty_sites, ]
+length(names(sapply(community_matrix_pres, is.numeric))) == length(colnames(community_matrix_pres))
+
+community_matrix_CCZ <- picante::sample2matrix(data_CCZ_only) 
+# community_matrix_CCZ <- data_CCZ_only %>% 
+# dplyr::group_by(site, SPECIES) %>% 
+#       dplyr::summarise(cover = sum(ABUNDANCE)) %>%  
+#       reshape::cast(.,  site ~ SPECIES, value = "cover")
+# community_matrix_CCZ[is.na(community_matrix_CCZ)] <-  0
+# rownames(community_matrix_CCZ) <- community_matrix_CCZ$site
+# community_matrix_CCZ <- community_matrix_CCZ[, !(names(community_matrix_CCZ) %in% "site")]
 
 # By grid, abundance standardised by pseudo-effort (number of sampling events in grid)
 sites_df <- data.frame(long = data_coords$long, lat = data_coords$lat, site = data_coords$site) %>% 
@@ -98,13 +107,13 @@ CCZ_rarecurve$Individuals <- as.integer(gsub('N', '', rownames(CCZ_rarecurve)))
 colnames(CCZ_rarecurve)[1] <- "Species"
 
 com_matT <- as.matrix(t(community_matrix_CCZ))
-Hills_q_CCZ <- iNEXT(com_matT, q = 0, datatype = "abundance", nboot = 2)
+Hills_q_CCZ <- iNEXT(com_matT, q = 0, datatype = "abundance", nboot = 10)
 ChaoRichness((com_matT))
-com_mat_inc <- community_matrix
-com_mat_inc <- ifelse(com_mat_inc > 0, 1, 0)
-inc_freq <- as.incfreq(t(com_mat_inc))
+# com_mat_inc <- community_matrix
+# com_mat_inc <- ifelse(com_mat_inc > 0, 1, 0)
+inc_freq <- as.incfreq(t(community_matrix_pres))
 ChaoRichness((inc_freq))
-Hills_q_0_inc_CCZ <- iNEXT(inc_freq, q=0, datatype = "incidence_freq", nboot = 2)
+Hills_q_0_inc_CCZ <- iNEXT(inc_freq, q = 0, datatype = "incidence_freq", nboot = 2)
 
 # -----------------------------------------------------------------------------------------------------------------
 # Export
