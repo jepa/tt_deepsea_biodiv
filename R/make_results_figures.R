@@ -151,15 +151,15 @@ D_species_accum <- ggplot(specaccum_sites_df) +
       ylab("Species Richness"); D_species_accum
 
 
-figure_3 <- (A_Chao1 / C_Chao2)  + plot_annotation(tag_levels = 'A')
+figure_3 <- (A_Chao1 | B_rarefaction_CCZ) / (C_Chao2 | D_species_accum) + plot_annotation(tag_levels = 'A')
 
 ggsave(figure_3,
-       filename = 'output-figures/figure_3_AC.tiff', 
-       width = 8.5, height = 8, units = 'in', dpi = 150)
+       filename = 'output-figures/figure_3.tiff', 
+       width = 8.5, height = 7, units = 'in', dpi = 150)
 
 
 
-  # -----------------------------------------------------------------------------------------------------------------
+ # -----------------------------------------------------------------------------------------------------------------
 # Higher taxon richness extrapolation
 # -----------------------------------------------------------------------------------------------------------------
 mod <- lm(log ~ order, data = taxon_rank_data)

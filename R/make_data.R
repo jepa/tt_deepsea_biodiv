@@ -14,7 +14,7 @@ data_all_species <- read.csv("data-raw/temp_spp_v1_abundance_2022-11-08.csv", he
 data_all_species <- data_all_species[nzchar(data_all_species$Site), ]
 data_all_species <- data_all_species[nzchar(data_all_species$Species), ]
 
-data_all_species_pres <- read.csv("data-raw/temp_spp_v1_presence_2022-11-08.csv", header = T, sep = ",", fileEncoding = "latin1") %>% 
+data_all_species_pres <- read.csv("data-raw/temp_all_spp_v1_presence_REGION_2022-11-09.csv", header = T, sep = ",", fileEncoding = "latin1") %>% 
       drop_na(Abundance)
 data_all_species_pres <- data_all_species_pres[nzchar(data_all_species_pres$Site), ]
 data_all_species_pres <- data_all_species_pres[nzchar(data_all_species_pres$Species), ]
