@@ -399,6 +399,7 @@ data <- read.csv("temp_spp_v1_abundance_2022-11-08.csv") ## 4410 SPP
 data <- read.csv("temp_spp_v1_presence_2022-11-08.csv") ## 4410 SPP 
 
 data <- read.csv("temp_fam_v1_presence_2022-11-08.csv") ## 4410 SPP 
+data <- read.csv("temp_genera_v1_presence_2022-11-09.csv") ## 4410 SPP 
 
 
 ## by size class
@@ -462,6 +463,7 @@ labs(title="Species accumulation curve- DeepData (named species and morphospecie
 
 data <- read.csv("temp_spp_v1_abundance_2022-11-08.csv") %>% mutate(Site = "CCZ")
 data <- read.csv("temp_fam_v1_abundance_2022-11-08.csv") %>% mutate(Site = "CCZ")
+data <- read.csv("temp_genera_v1_abundance_2022-11-09.csv") %>% mutate(Site = "CCZ")
 
 data.matrix <- sample2matrix(data)
 data.matrix[1:5, 1:5]
@@ -740,3 +742,5 @@ dim(merga) ## 511   7
 dim(data1) ## 268   6
 dim(data2) ## 511   2
 write.csv(merga, "OUTPUT.csv")
+
+
