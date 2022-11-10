@@ -224,6 +224,23 @@ rownames(samplePoints.sp) <- with(samplePoints.sp, paste(region, site, depth_qua
 # -----------------------------------------------------------------------------------------------------------------
 
 
+##
+
+## notes- 10th NOV 
+
+## Is your writing inext dataframr working?
+Hills_q_0_inc <- iNEXT(inc_freq, q=0, datatype = "incidence_freq", nboot = 2)
+test <- ChaoRichness((inc_freq))
+write.csv(as.data.frame(Hills_q_0_inc, "OUTPUT.csv"))
+#Error in as.data.frame.default(Hills_q_0_inc, "OUTPUT.csv") : cannot coerce class ‘"iNEXT"’ to a data.frame
+
+
+## add sd dev into plots?
+geom_ribbon(aes(ymin = Richness - 1.96*sd, ymax = Richness + 1.96*sd)
+
+            
+                        
+            
 ## FIG 3 SPECIES RICHNESS ESTIMATES + CURVES 
 
 rm(list=ls())
@@ -756,4 +773,82 @@ dim(data1) ## 268   6
 dim(data2) ## 511   2
 write.csv(merga, "OUTPUT.csv")
 
+#################
+
+## 10th nov UpSet Plot
+
+upset <- read.csv("temp_all_spp_v1_presence_REGION_2022-11-09.csv")
+upset <- (read.csv("temp_all_spp_v1_presence_REGION_2022-11-09.csv",header=T,sep=",",fileEncoding="latin1")[-2,])
+
+## w presence absense from fuzzy sim
+data.presabs <- splist2presabs(upset, sites.col = "Site",
+                               sp.col = "Species", keep.n = FALSE)
+
+test <- t(data.presabs)
+head(test)
+test <- t(as.matrix(data.presabs[,-1]))
+colnames(test) <- data.presabs$Site
+head(test)
+
+write.csv(test, "OUTPUT.csv")
+
+#####################################
+
+## UPSET- other script
+
+#upset <- read.csv("temp_DD_ed_4_diversity_all_spp_region_2022-04-14.csv")
+#data.matrix <- as.matrix(upset)
+#test <- make_comb_mat(upset)
+
+#upset <- read.csv("DD_pres-abs_table_v1_2021-10-26.csv")
+
+#data.matrix <- as.matrix(upset)
+#head(data.matrix)
+#write.csv(data.matrix, "OUTPUT.csv")
+
+## transpose- species in rows, contractors in columns
+## t - transpose
+
+#test <- t(data.matrix)
+#test <- t(data.presabs)
+#head(test)
+
+
+### PLOTTING
+
+basin_COLS <- viridis(n=8)[-8]
+names(basin_COLS) <- colnames(test)
+morph_comb <- make_comb_mat(test, mode = "intersect")
+
+# pdf("Shared_wCCZ_species-Upset_plot.pdf", width = 10, height = 3.5)
+morph_plot <- UpSet(morph_comb, set_order = colnames(morph_comb), 
+                    comb_order = rev(order(comb_size(morph_comb))), 
+                    pt_size = unit(2, "mm"), lwd = 1, top_annotation = HeatmapAnnotation(
+                       
+                       "Shared species (all)" = anno_barplot(comb_size(morph_comb),
+                                                             ylim = c(0, max(comb_size(morph_comb))*1.1),
+                                                             border = FALSE,
+                                                             gp = gpar(fill = "black"),
+                                                             height = unit(10, "cm")  ## adjust bar to dot matrix ratio: 10 REG   
+                       ),
+                       annotation_name_side = "left",
+                       annotation_name_rot = 90), ## angle of legend
+                    left_annotation = rowAnnotation(
+                       "No. species per region (all)" = anno_barplot(-set_size(morph_comb),
+                                                                     baseline = 0,
+                                                                     axis_param = list(
+                                                                        at = c(0, -250, -500, -1000, -1500),
+                                                                        labels = c(0, 250, 500, 1000, 1500),
+                                                                        labels_rot = 0),
+                                                                     border = FALSE,
+                                                                     gp = gpar(fill = basin_COLS),
+                                                                     width = unit(7, "cm"),  ## width of lhs of y axis: 7: CA; 5: SA; 10 REG
+                                                                     height = unit(0.5, "cm")),
+                       set_name = anno_text(set_name(morph_comb),
+                                            location = 0.5, ## labels for side bars
+                                            just = "center",
+                                            width = max_text_width(set_name(morph_comb)) + 
+                                               unit(1, "mm"))), right_annotation = NULL, show_row_names=FALSE)
+
+morph_plot = draw(morph_plot)
 
