@@ -1,7 +1,7 @@
 library(tidyverse)
 library(patchwork)
 
-data_coords <- read.csv('data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv') %>% 
+full_data <- read.csv('data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv') %>% 
       filter(!is.na(LONGITUDE), !is.na(LATITUDE)) %>% 
       rename(site = SITE, 
              lat = LATITUDE, 
@@ -10,8 +10,14 @@ data_coords <- read.csv('data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv') %>%
       mutate(year = sub('.*(\\d{4}).*', '\\1', DATE),
              depth = as.numeric(depth),
              year = as.integer(year),
-             phylum = Phylum.) %>% 
-      drop_na() %>% 
+             phylum = Phylum.,
+             depth_group_width = as.numeric(cut_width(depth, width = 100, center = 0)),
+             sample_unit = paste0(site, "_", year)) %>% 
+      drop_na()
+
+full_data <- full_data[nzchar(full_data$phylum), ]
+
+effort_data <- full_data  %>% 
       dplyr::select(site, depth, year, phylum) %>% 
       unique() %>% 
       # How should we subdivide this?
@@ -32,8 +38,11 @@ data_coords <- read.csv('data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv') %>%
              depth_group_width_max = max(depth)) %>% 
       ungroup()
 
-data_coords <- data_coords[nzchar(data_coords$phylum), ]
-
+depth_width_effort <- effort_data %>% 
+      dplyr::select(depth_group_width, sample_unit) %>% 
+      unique() %>% 
+      group_by(depth_group_width) %>% 
+      summarise(width_effort = n())
 
 samples_by_depth <- ggplot(data_coords) +
       geom_density(aes(y = depth), fill = "lightblue") +
@@ -76,8 +85,6 @@ depth_group_width <- ggplot(data_coords) +
 
 depth_groups <- samples_by_depth / depth_group_number / depth_group_interval / depth_group_width
 
-
-
 samples_by_depth_phyla <- ggplot(data_coords) +
       geom_density(aes(y = depth), fill = "lightblue") +
       facet_wrap(facets = vars(phylum)) +
@@ -92,3 +99,13 @@ ggsave(depth_groups,
 ggsave(samples_by_depth_phyla,
        filename = 'output-figures/samples_by_depth_phyla.jpg', 
        width = 8, height = 6, units = 'in', dpi = 150)
+
+full_with_effort <- merge(full_data, depth_width_effort, all.x = T) 
+stand_abundance <- full_with_effort %>% 
+      group_by(phylum, depth_group_width) %>% 
+      summarise(stand_abundance = round(sum(ABUNDANCE)/width_effort)) %>% 
+      unique()
+
+ggplot(stand_abundance) +
+      geom_point(aes(x = depth_group_width, y = stand_abundance, col = phylum)) 
+
