@@ -16,17 +16,35 @@ full_data <- read.csv('data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv') %>%
       filter(!is.na(LONGITUDE), !is.na(LATITUDE))
 names(full_data) <- tolower(names(full_data))
 
+# Raw checklist data
+checklist_raw <- read.csv("data-raw/CCZ_CHECKLIST_2022-11-06.csv") %>% 
+      dplyr::select(Family, ScientificName_accepted) %>% 
+      unique() %>% 
+      rename(family = Family, scientificname_accepted = ScientificName_accepted)
+
+# Add family column to full_data
+full_data <- merge(full_data, checklist_raw, all.x = T)
+
 # Species abundance by site
 species_abundance <- full_data %>% 
       group_by(site, species) %>% 
+      summarise(abundance = sum(abundance)) 
+
+# Family abundance by site
+family_abundance <- full_data %>% 
+      group_by(site, family) %>% 
       summarise(abundance = sum(abundance)) %>% 
       drop_na()
 
 # Species presence-absence by site
 species_presAbs <- full_data %>% 
       group_by(site, species) %>% 
-      summarise(presence = ifelse(abundance > 0, 1, 0)) %>% 
-      drop_na()
+      summarise(presence = ifelse(abundance > 0, 1, 0))
+
+# Species presence-absence by site
+family_presAbs <- full_data %>% 
+      group_by(site, family) %>% 
+      summarise(presence = ifelse(abundance > 0, 1, 0))
 
 # Species description data
 species_descriptions <- read.csv("data-raw/ARCHIVED_DATA/TEMP_papers_table_1980_on_2022-11-05.csv") %>% 
@@ -81,25 +99,24 @@ ggsave(figure_2,
 # Figure 3: Species accumulation curves for CCZ
 # -----------------------------------------------------------------------------------------------------------------
 # Community matrix for species abundance by single site: CCZ
-data_CCZ_only <- species_abundance %>% 
+species_CCZ_only <- species_abundance %>% 
       mutate(site = "CCZ")
 
-community_matrix_CCZ <- data_CCZ_only %>%
+species_matrix_CCZ <- species_CCZ_only %>%
 dplyr::group_by(site, species) %>%
       dplyr::summarise(cover = sum(abundance)) %>%
       reshape::cast(.,  site ~ species, value = "cover")
-community_matrix_CCZ[is.na(community_matrix_CCZ)] <-  0
+species_matrix_CCZ[is.na(species_matrix_CCZ)] <-  0
 
-com_matT <- as.matrix(t(community_matrix_CCZ))
-Hills_q_CCZ <- iNEXT::iNEXT(com_matT, q = 0, datatype = "abundance", nboot = 10)
-Hills_q_CCZ_df <- as.data.frame(Hills_q_CCZ$iNextEst$size_based)
+species_matT <- as.matrix(t(species_matrix_CCZ))
+Hills_q_CCZ_species <- iNEXT::iNEXT(species_matT, q = 0, datatype = "abundance", nboot = 10)
+Hills_q_CCZ_species_df <- as.data.frame(Hills_q_CCZ_species$iNextEst$size_based)
    
-
-A_Chao1 <- ggplot(Hills_q_CCZ_df %>% filter(Method != 'Observed'), aes(x = m)) +
+A_Chao1_species <- ggplot(Hills_q_CCZ_species_df %>% filter(Method != 'Observed'), aes(x = m)) +
       geom_ribbon(aes(x = m, ymin = qD.LCL, ymax = qD.UCL), fill = "coral2", alpha = 0.2) +
       geom_line(aes(y = qD, lty = Method),
                 col = "coral2", cex = 1) +
-      geom_point(data = Hills_q_CCZ_df %>% filter(Method == 'Observed'), aes(x = m, y = qD), col = "coral2", cex = 2) +
+      geom_point(data = Hills_q_CCZ_species_df %>% filter(Method == 'Observed'), aes(x = m, y = qD), col = "coral2", cex = 2) +
       theme(legend.justification = c(0, 1), 
             legend.position = c(.5, .4),
             legend.box.margin=margin(c(20, 20, 20, 20)),
@@ -110,23 +127,23 @@ A_Chao1 <- ggplot(Hills_q_CCZ_df %>% filter(Method != 'Observed'), aes(x = m)) +
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Number of Individuals") +
       ylab("Species Diversity") +
-      scale_y_continuous(breaks = seq(0, 5000, 1000)) +
+      # scale_y_continuous(breaks = seq(0, 5000, 1000)) +
       scale_linetype_manual(values = c("dashed", "solid")); A_Chao1
 
 # Community matrix for species presence-absence by all sites (the sampling units)
-community_matrix_pres <- species_presAbs %>%
+species_matrix_pres <- species_presAbs %>%
       dplyr::group_by(site, species) %>%
       dplyr::summarise(presence = ifelse(sum(presence) > 0, 1, 0)) %>%
       reshape::cast(.,  site ~ species, value = "presence")
-community_matrix_pres[is.na(community_matrix_pres)] <-  0
-inc_freq <- as.incfreq(as.matrix(t(community_matrix_pres)))
-Hills_q_0_inc_CCZ <- iNEXT(inc_freq, q = 0, datatype = "incidence_freq", nboot = 2)
-Hills_q0_inc_df <- as.data.frame(Hills_q_0_inc_CCZ$iNextEst$size_based)
+species_matrix_pres[is.na(species_matrix_pres)] <-  0
+inc_freq_spec <- as.incfreq(as.matrix(t(species_matrix_pres)))
+Hills_q_0_inc_CCZ_spec <- iNEXT(inc_freq_spec, q = 0, datatype = "incidence_freq", nboot = 2)
+Hills_q_0_inc_CCZ_spec_df <- as.data.frame(Hills_q_0_inc_CCZ_spec$iNextEst$size_based)
 
-B_Chao2 <- ggplot(Hills_q0_inc_df %>% filter(Method != 'Observed')) +
+B_Chao2_species <- ggplot(Hills_q_0_inc_CCZ_spec_df %>% filter(Method != 'Observed')) +
       geom_ribbon(aes(x = t, ymin = qD.LCL, ymax = qD.UCL), fill = "coral2", alpha = 0.2, show.legend = FALSE) +      
       geom_line(aes(x = t, y = qD, lty = Method), col = "coral2", cex = 1) +
-      geom_point(data = Hills_q0_inc_df %>% filter(Method == 'Observed'), aes(x = t, y = qD), col = "coral2", cex = 2) +
+      geom_point(data = Hills_q_0_inc_CCZ_spec_df %>% filter(Method == 'Observed'), aes(x = t, y = qD), col = "coral2", cex = 2) +
       theme(legend.justification = c(0, 1), 
             legend.position = c(.5, .4),
             legend.box.margin=margin(c(20, 20, 20, 20)),
@@ -137,11 +154,70 @@ B_Chao2 <- ggplot(Hills_q0_inc_df %>% filter(Method != 'Observed')) +
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Number of sampling units") +
       ylab("Species Diversity") +
-      scale_y_continuous(breaks = seq(0, 6000, 1000)) +
-      scale_linetype_manual(values = c("dashed", "solid")); B_Chao2
+      # scale_y_continuous(breaks = seq(0, 6000, 1000)) +
+      scale_linetype_manual(values = c("dashed", "solid")); B_Chao2_species
 
+# Community matrix for family abundance by single site: CCZ
+family_CCZ_only <- family_abundance %>% 
+      mutate(site = "CCZ")
 
+family_matrix_CCZ <- family_CCZ_only %>%
+      dplyr::group_by(site, family) %>%
+      dplyr::summarise(cover = sum(abundance)) %>%
+      reshape::cast(.,  site ~ family, value = "cover")
+family_matrix_CCZ[is.na(family_matrix_CCZ)] <-  0
 
+family_matT <- as.matrix(t(family_matrix_CCZ))
+Hills_q_CCZ_family <- iNEXT::iNEXT(family_matT, q = 0, datatype = "abundance", nboot = 10)
+Hills_q_CCZ_family_df <- as.data.frame(Hills_q_CCZ_family$iNextEst$size_based)
 
+C_Chao1_family <- ggplot(Hills_q_CCZ_family_df %>% filter(Method != 'Observed'), aes(x = m)) +
+      geom_ribbon(aes(x = m, ymin = qD.LCL, ymax = qD.UCL), fill = "coral2", alpha = 0.2) +
+      geom_line(aes(y = qD, lty = Method),
+                col = "coral2", cex = 1) +
+      geom_point(data = Hills_q_CCZ_family_df %>% filter(Method == 'Observed'), aes(x = m, y = qD), col = "coral2", cex = 2) +
+      theme(legend.justification = c(0, 1), 
+            legend.position = c(.5, .4),
+            legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.margin = margin(1, 1, 1, 1),
+            legend.spacing.x = unit(0, "mm"),
+            legend.spacing.y = unit(0, "mm"),
+            legend.title = element_blank(),
+            legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      xlab("Number of Individuals") +
+      ylab("Family Diversity") +
+      # scale_y_continuous(breaks = seq(0, 5000, 1000)) +
+      scale_linetype_manual(values = c("dashed", "solid")); C_Chao1_family
 
+# Community matrix for family presence-absence by all sites (the sampling units)
+family_matrix_pres <- family_presAbs %>%
+      dplyr::group_by(site, family) %>%
+      dplyr::summarise(presence = ifelse(sum(presence) > 0, 1, 0)) %>%
+      reshape::cast(.,  site ~ family, value = "presence")
+family_matrix_pres[is.na(family_matrix_pres)] <-  0
+inc_freq_family <- as.incfreq(as.matrix(t(family_matrix_pres)))
+Hills_q_0_inc_CCZ_family <- iNEXT(inc_freq_family, q = 0, datatype = "incidence_freq", nboot = 2)
+Hills_q_0_inc_CCZ_family_df <- as.data.frame(Hills_q_0_inc_CCZ_family$iNextEst$size_based)
 
+D_Chao2_family <- ggplot(Hills_q_0_inc_CCZ_family_df %>% filter(Method != 'Observed')) +
+      geom_ribbon(aes(x = t, ymin = qD.LCL, ymax = qD.UCL), fill = "coral2", alpha = 0.2, show.legend = FALSE) +      
+      geom_line(aes(x = t, y = qD, lty = Method), col = "coral2", cex = 1) +
+      geom_point(data = Hills_q_0_inc_CCZ_family_df %>% filter(Method == 'Observed'), aes(x = t, y = qD), col = "coral2", cex = 2) +
+      theme(legend.justification = c(0, 1), 
+            legend.position = c(.5, .4),
+            legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.margin = margin(1, 1, 1, 1),
+            legend.spacing.x = unit(0, "mm"),
+            legend.spacing.y = unit(0, "mm"),
+            legend.title = element_blank(),
+            legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      xlab("Number of sampling units") +
+      ylab("Family Diversity") +
+      # scale_y_continuous(breaks = seq(0, 6000, 1000)) +
+      scale_linetype_manual(values = c("dashed", "solid")); D_Chao2_family
+
+figure_3 <- (A_Chao1_species | B_Chao2_species) / (C_Chao1_family | D_Chao2_family) + plot_annotation(tag_levels = 'A')
+
+ggsave(figure_3,
+       filename = 'output-figures/figure_3.tiff', 
+       width = 8.5, height = 7, units = 'in', dpi = 150)
