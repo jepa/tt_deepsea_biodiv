@@ -12,39 +12,46 @@ theme_set(theme_bw(base_size = 12))
 # Data import
 # -----------------------------------------------------------------------------------------------------------------
 # All raw data
-full_data <- read.csv('data-raw/CCZ_ALL_SPP_DATA_FIN_2022-11-08.csv') %>% 
-      filter(!is.na(LONGITUDE), !is.na(LATITUDE))
-names(full_data) <- tolower(names(full_data))
-
+full_data <- read.csv('data-raw/CCZ_ALL_TAXA_DATA_FIN_2022-11-08.csv') %>%
+      rename_all(tolower) %>% 
+      mutate(abundance = as.numeric(abundance))
+      
 # Raw checklist data
 checklist_raw <- read.csv("data-raw/CCZ_CHECKLIST_2022-11-06.csv") %>% 
       dplyr::select(Family, ScientificName_accepted) %>% 
       unique() %>% 
-      rename(family = Family, scientificname_accepted = ScientificName_accepted)
+      rename_all(tolower) 
 
 # Add family column to full_data
 full_data <- merge(full_data, checklist_raw, all.x = T)
 
 # Species abundance by site
 species_abundance <- full_data %>% 
+      filter(!is.na(species), species != "") %>% 
       group_by(site, species) %>% 
-      summarise(abundance = sum(abundance)) 
+      summarise(abundance = sum(abundance)) %>% 
+      filter(!is.na(abundance))
 
 # Family abundance by site
 family_abundance <- full_data %>% 
+      filter(!is.na(family), family != "") %>% 
       group_by(site, family) %>% 
       summarise(abundance = sum(abundance)) %>% 
-      drop_na()
+      filter(!is.na(abundance))
 
 # Species presence-absence by site
 species_presAbs <- full_data %>% 
+      filter(!is.na(species), species != "") %>% 
       group_by(site, species) %>% 
-      summarise(presence = ifelse(abundance > 0, 1, 0))
+      summarise(presence = ifelse(abundance > 0, 1, 0)) %>% 
+      filter(!is.na(presence))
 
 # Species presence-absence by site
 family_presAbs <- full_data %>% 
+      filter(!is.na(family), family != "") %>% 
       group_by(site, family) %>% 
-      summarise(presence = ifelse(abundance > 0, 1, 0))
+      summarise(presence = ifelse(abundance > 0, 1, 0)) %>% 
+      filter(!is.na(presence))
 
 # Species description data
 species_descriptions <- read.csv("data-raw/ARCHIVED_DATA/TEMP_papers_table_1980_on_2022-11-05.csv") %>% 
@@ -128,7 +135,7 @@ A_Chao1_species <- ggplot(Hills_q_CCZ_species_df %>% filter(Method != 'Observed'
       xlab("Number of Individuals") +
       ylab("Species Diversity") +
       # scale_y_continuous(breaks = seq(0, 5000, 1000)) +
-      scale_linetype_manual(values = c("dashed", "solid")); A_Chao1
+      scale_linetype_manual(values = c("dashed", "solid")); A_Chao1_species
 
 # Community matrix for species presence-absence by all sites (the sampling units)
 species_matrix_pres <- species_presAbs %>%
