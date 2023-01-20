@@ -44,7 +44,7 @@ depth_width_effort <- effort_data %>%
       group_by(depth_group_width) %>% 
       summarise(width_effort = n())
 
-samples_by_depth <- ggplot(data_coords) +
+samples_by_depth <- ggplot(full_data) +
       geom_density(aes(y = depth), fill = "lightblue") +
       # geom_hline(aes(yintercept = depth_group_min, colour = depth_group)) +
       scale_y_reverse() +
@@ -52,8 +52,8 @@ samples_by_depth <- ggplot(data_coords) +
       scale_colour_gradient(low = "lightblue", high = "dodgerblue4") +
       theme_bw(); samples_by_depth
 
-depth_group_number <- ggplot(data_coords) +
-      geom_rect(data = data_coords %>% select(depth_group_number_min, depth_group_number_max, depth_group_number) %>% unique(),
+depth_group_number <- ggplot(effort_data) +
+      geom_rect(data = effort_data %>% select(depth_group_number_min, depth_group_number_max, depth_group_number) %>% unique(),
                 aes(ymin = depth_group_number_min, ymax = depth_group_number_max,
                     xmin = 0, xmax = 0.003, fill = depth_group_number), col = "black", alpha = 0.6) +
       geom_density(aes(y = depth), fill = "coral1")+
@@ -62,8 +62,8 @@ depth_group_number <- ggplot(data_coords) +
       scale_fill_gradient(low = "lightblue", high = "dodgerblue4") +
       theme_bw(); depth_group_number
 
-depth_group_interval <- ggplot(data_coords) +
-      geom_rect(data = data_coords %>% select(depth_group_interval_min, depth_group_interval_max, depth_group_interval) %>% unique(),
+depth_group_interval <- ggplot(effort_data) +
+      geom_rect(data = effort_data %>% select(depth_group_interval_min, depth_group_interval_max, depth_group_interval) %>% unique(),
                 aes(ymin = depth_group_interval_min, ymax = depth_group_interval_max,
                     xmin = 0, xmax = 0.003, fill = depth_group_interval), col = "black", alpha = 0.6) +
       geom_density(aes(y = depth), fill = "coral1")+
@@ -72,8 +72,8 @@ depth_group_interval <- ggplot(data_coords) +
       scale_fill_gradient(low = "lightblue", high = "dodgerblue4") +
       theme_bw(); depth_group_interval
 
-depth_group_width <- ggplot(data_coords) +
-      geom_rect(data = data_coords %>% select(depth_group_width_min, depth_group_width_max, depth_group_width) %>% unique(),
+depth_group_width <- ggplot(effort_data) +
+      geom_rect(data = effort_data %>% select(depth_group_width_min, depth_group_width_max, depth_group_width) %>% unique(),
                 aes(ymin = depth_group_width_min, ymax = depth_group_width_max,
                     xmin = 0, xmax = 0.003, fill = depth_group_width), col = "black", alpha = 0.6) +
       geom_density(aes(y = depth), fill = "coral1")+
@@ -85,7 +85,7 @@ depth_group_width <- ggplot(data_coords) +
 
 depth_groups <- samples_by_depth / depth_group_number / depth_group_interval / depth_group_width
 
-samples_by_depth_phyla <- ggplot(data_coords) +
+samples_by_depth_phyla <- ggplot(full_data) +
       geom_density(aes(y = depth), fill = "lightblue") +
       facet_wrap(facets = vars(phylum)) +
       scale_y_reverse() +
