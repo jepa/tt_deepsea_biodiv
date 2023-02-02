@@ -18,45 +18,42 @@ full_data <- read.csv('data-raw/CCZ_ALL_TAXA_DATA_FIN_2023-02-01.csv') %>%
 
 # Species abundance by site
 species_abundance <- full_data %>% 
-      filter(!is.na(species), species != "") %>% 
+      filter(!is.na(species), species != "", 
+             !is.na(site), site != "",
+             !is.na(abundance)) %>% 
       group_by(site, species) %>% 
-      summarise(abundance = sum(abundance)) %>% 
-      filter(!is.na(abundance))
+      summarise(abundance = sum(abundance))
 
 # Family abundance by site
 family_abundance <- full_data %>% 
-      filter(!is.na(family), family != "") %>% 
+      filter(!is.na(family), family != "", 
+             !is.na(site), site != "",
+             !is.na(abundance)) %>% 
       group_by(site, family) %>% 
-      summarise(abundance = sum(abundance)) %>% 
-      filter(!is.na(abundance))
+      summarise(abundance = sum(abundance)) 
 
 # Genus abundance by site
 genus_abundance <- full_data %>% 
-      filter(!is.na(genus), genus != "") %>% 
+      filter(!is.na(genus), genus != "", 
+             !is.na(site), site != "",
+             !is.na(abundance)) %>% 
       group_by(site, genus) %>% 
-      summarise(abundance = sum(abundance)) %>% 
-      filter(!is.na(abundance))
+      summarise(abundance = sum(abundance))
 
 # Species presence-absence by site
-species_presAbs <- full_data %>% 
-      filter(!is.na(species), species != "") %>% 
+species_presAbs <- species_abundance %>% 
       group_by(site, species) %>% 
-      summarise(presence = ifelse(abundance > 0, 1, 0)) %>% 
-      filter(!is.na(presence))
+      summarise(presence = ifelse(abundance > 0, 1, 0)) 
 
 # Family presence-absence by site
-family_presAbs <- full_data %>% 
-      filter(!is.na(family), family != "") %>% 
+family_presAbs <- family_abundance %>% 
       group_by(site, family) %>% 
-      summarise(presence = ifelse(abundance > 0, 1, 0)) %>% 
-      filter(!is.na(presence))
+      summarise(presence = ifelse(abundance > 0, 1, 0)) 
 
 # Genus presence-absence by site
-genus_presAbs <- full_data %>% 
-      filter(!is.na(genus), genus != "") %>% 
+genus_presAbs <- genus_abundance %>% 
       group_by(site, genus) %>% 
-      summarise(presence = ifelse(abundance > 0, 1, 0)) %>% 
-      filter(!is.na(presence))
+      summarise(presence = ifelse(abundance > 0, 1, 0)) 
 
 # Species description data
 species_descriptions <- read.csv("data-raw/ARCHIVED_DATA/TEMP_papers_table_1980_on_2022-11-05.csv") %>% 
@@ -301,3 +298,6 @@ ggsave(figure_3,
 Hills_q_0_inc_CCZ_spec$AsyEst
 Hills_q_0_inc_CCZ_family$AsyEst
 Hills_q_0_inc_CCZ_genus$AsyEst
+ChaoRichness(inc_freq_genus)
+
+
