@@ -5,25 +5,16 @@ library(ggthemes)
 library(ggstance)
 library(picante)
 library(iNEXT)
-
+options(scipen=999)
 theme_set(theme_bw(base_size = 12))
 
 # -----------------------------------------------------------------------------------------------------------------
 # Data import
 # -----------------------------------------------------------------------------------------------------------------
 # All raw data
-full_data <- read.csv('data-raw/CCZ_ALL_TAXA_DATA_FIN_2022-11-08.csv') %>%
+full_data <- read.csv('data-raw/CCZ_ALL_TAXA_DATA_FIN_2023-02-01.csv') %>%
       rename_all(tolower) %>% 
       mutate(abundance = as.numeric(abundance))
-      
-# Raw checklist data
-checklist_raw <- read.csv("data-raw/CCZ_CHECKLIST_2022-11-06.csv") %>% 
-      dplyr::select(Family, ScientificName_accepted) %>% 
-      unique() %>% 
-      rename_all(tolower) 
-
-# Add family column to full_data
-full_data <- merge(full_data, checklist_raw, all.x = T)
 
 # Species abundance by site
 species_abundance <- full_data %>% 
@@ -39,6 +30,13 @@ family_abundance <- full_data %>%
       summarise(abundance = sum(abundance)) %>% 
       filter(!is.na(abundance))
 
+# Genus abundance by site
+genus_abundance <- full_data %>% 
+      filter(!is.na(genus), genus != "") %>% 
+      group_by(site, genus) %>% 
+      summarise(abundance = sum(abundance)) %>% 
+      filter(!is.na(abundance))
+
 # Species presence-absence by site
 species_presAbs <- full_data %>% 
       filter(!is.na(species), species != "") %>% 
@@ -46,10 +44,17 @@ species_presAbs <- full_data %>%
       summarise(presence = ifelse(abundance > 0, 1, 0)) %>% 
       filter(!is.na(presence))
 
-# Species presence-absence by site
+# Family presence-absence by site
 family_presAbs <- full_data %>% 
       filter(!is.na(family), family != "") %>% 
       group_by(site, family) %>% 
+      summarise(presence = ifelse(abundance > 0, 1, 0)) %>% 
+      filter(!is.na(presence))
+
+# Genus presence-absence by site
+genus_presAbs <- full_data %>% 
+      filter(!is.na(genus), genus != "") %>% 
+      group_by(site, genus) %>% 
       summarise(presence = ifelse(abundance > 0, 1, 0)) %>% 
       filter(!is.na(presence))
 
@@ -223,8 +228,76 @@ D_Chao2_family <- ggplot(Hills_q_0_inc_CCZ_family_df %>% filter(Method != 'Obser
       # scale_y_continuous(breaks = seq(0, 6000, 1000)) +
       scale_linetype_manual(values = c("dashed", "solid")); D_Chao2_family
 
-figure_3 <- (A_Chao1_species | B_Chao2_species) / (C_Chao1_family | D_Chao2_family) + plot_annotation(tag_levels = 'A')
+# Community matrix for genus abundance by single site: CCZ
+genus_CCZ_only <- genus_abundance %>% 
+      mutate(site = "CCZ")
+
+genus_matrix_CCZ <- genus_CCZ_only %>%
+      dplyr::group_by(site, genus) %>%
+      dplyr::summarise(cover = sum(abundance)) %>%
+      reshape::cast(.,  site ~ genus, value = "cover")
+genus_matrix_CCZ[is.na(genus_matrix_CCZ)] <-  0
+
+genus_matT <- as.matrix(t(genus_matrix_CCZ))
+Hills_q_CCZ_genus <- iNEXT::iNEXT(genus_matT, q = 0, datatype = "abundance", nboot = 10)
+Hills_q_CCZ_genus_df <- as.data.frame(Hills_q_CCZ_genus$iNextEst$size_based)
+
+E_Chao1_genus <- ggplot(Hills_q_CCZ_genus_df %>% filter(Method != 'Observed'), aes(x = m)) +
+      geom_ribbon(aes(x = m, ymin = qD.LCL, ymax = qD.UCL), fill = "coral2", alpha = 0.2) +
+      geom_line(aes(y = qD, lty = Method),
+                col = "coral2", cex = 1) +
+      geom_point(data = Hills_q_CCZ_genus_df %>% filter(Method == 'Observed'), aes(x = m, y = qD), col = "coral2", cex = 2) +
+      theme(legend.justification = c(0, 1), 
+            legend.position = c(.5, .4),
+            legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.margin = margin(1, 1, 1, 1),
+            legend.spacing.x = unit(0, "mm"),
+            legend.spacing.y = unit(0, "mm"),
+            legend.title = element_blank(),
+            legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      xlab("Number of Individuals") +
+      ylab("Genus Diversity") +
+      # scale_y_continuous(breaks = seq(0, 5000, 1000)) +
+      scale_linetype_manual(values = c("dashed", "solid")); E_Chao1_genus
+
+# Community matrix for genus presence-absence by all sites (the sampling units)
+genus_matrix_pres <- genus_presAbs %>%
+      dplyr::group_by(site, genus) %>%
+      dplyr::summarise(presence = ifelse(sum(presence) > 0, 1, 0)) %>%
+      reshape::cast(.,  site ~ genus, value = "presence")
+genus_matrix_pres[is.na(genus_matrix_pres)] <-  0
+inc_freq_genus <- as.incfreq(as.matrix(t(genus_matrix_pres)))
+Hills_q_0_inc_CCZ_genus <- iNEXT(inc_freq_genus, q = 0, datatype = "incidence_freq", nboot = 2)
+Hills_q_0_inc_CCZ_genus_df <- as.data.frame(Hills_q_0_inc_CCZ_genus$iNextEst$size_based)
+
+F_Chao2_genus <- ggplot(Hills_q_0_inc_CCZ_genus_df %>% filter(Method != 'Observed')) +
+      geom_ribbon(aes(x = t, ymin = qD.LCL, ymax = qD.UCL), fill = "coral2", alpha = 0.2, show.legend = FALSE) +      
+      geom_line(aes(x = t, y = qD, lty = Method), col = "coral2", cex = 1) +
+      geom_point(data = Hills_q_0_inc_CCZ_genus_df %>% filter(Method == 'Observed'), aes(x = t, y = qD), col = "coral2", cex = 2) +
+      theme(legend.justification = c(0, 1), 
+            legend.position = c(.5, .4),
+            legend.box.margin=margin(c(20, 20, 20, 20)),
+            legend.margin = margin(1, 1, 1, 1),
+            legend.spacing.x = unit(0, "mm"),
+            legend.spacing.y = unit(0, "mm"),
+            legend.title = element_blank(),
+            legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      xlab("Number of sampling units") +
+      ylab("Genus Diversity") +
+      # scale_y_continuous(breaks = seq(0, 6000, 1000)) +
+      scale_linetype_manual(values = c("dashed", "solid")); F_Chao2_genus
+
+
+figure_3 <- (A_Chao1_species | B_Chao2_species) / (C_Chao1_family | D_Chao2_family)  / (E_Chao1_genus | F_Chao2_genus) + plot_annotation(tag_levels = 'A')
 
 ggsave(figure_3,
-       filename = 'output-figures/figure_3.tiff', 
-       width = 8.5, height = 7, units = 'in', dpi = 150)
+       filename = 'output-figures/figure_3.png', 
+       width = 10, height = 10, units = 'in', dpi = 150)
+
+
+# Can you output the curves and also the results e.g. the chao2 richness estimates?
+#       I’m getting >8000 for spp, >550 for fam and >1000 for genera, 
+# NB had wrong input data for family- reran and is 485
+Hills_q_0_inc_CCZ_spec$AsyEst
+Hills_q_0_inc_CCZ_family$AsyEst
+Hills_q_0_inc_CCZ_genus$AsyEst
