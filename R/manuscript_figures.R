@@ -119,7 +119,7 @@ dplyr::group_by(site, species) %>%
 species_matrix_CCZ[is.na(species_matrix_CCZ)] <-  0
 
 species_matT <- as.matrix(t(species_matrix_CCZ))
-Hills_q_CCZ_species <- iNEXT::iNEXT(species_matT, q = 0, datatype = "abundance", nboot = 10, endpoint = 400000)
+Hills_q_CCZ_species <- iNEXT::iNEXT(species_matT, q = 0, datatype = "abundance", nboot = 10, endpoint = 500000)
 Hills_q_CCZ_species_df <- as.data.frame(Hills_q_CCZ_species$iNextEst$size_based)
    
 A_Chao1_species <- ggplot(Hills_q_CCZ_species_df %>% filter(Method != 'Observed'), aes(x = m)) +
