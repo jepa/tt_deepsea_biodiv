@@ -14,7 +14,8 @@ theme_set(theme_bw(base_size = 12))
 # All raw data
 full_data <- read.csv('data-raw/CCZ_ALL_TAXA_DATA_FIN_2023-02-01.csv') %>%
       rename_all(tolower) %>% 
-      mutate(abundance = as.numeric(abundance))
+      mutate(abundance = as.numeric(abundance)) %>% 
+      mutate(new_site_names = paste0("site", as.integer(factor(site))))
 
 # Species abundance by site
 species_abundance <- full_data %>% 
@@ -118,7 +119,7 @@ dplyr::group_by(site, species) %>%
 species_matrix_CCZ[is.na(species_matrix_CCZ)] <-  0
 
 species_matT <- as.matrix(t(species_matrix_CCZ))
-Hills_q_CCZ_species <- iNEXT::iNEXT(species_matT, q = 0, datatype = "abundance", nboot = 10)
+Hills_q_CCZ_species <- iNEXT::iNEXT(species_matT, q = 0, datatype = "abundance", nboot = 10, endpoint = 400000)
 Hills_q_CCZ_species_df <- as.data.frame(Hills_q_CCZ_species$iNextEst$size_based)
    
 A_Chao1_species <- ggplot(Hills_q_CCZ_species_df %>% filter(Method != 'Observed'), aes(x = m)) +
@@ -146,7 +147,7 @@ species_matrix_pres <- species_presAbs %>%
       reshape::cast(.,  site ~ species, value = "presence")
 species_matrix_pres[is.na(species_matrix_pres)] <-  0
 inc_freq_spec <- as.incfreq(as.matrix(t(species_matrix_pres)))
-Hills_q_0_inc_CCZ_spec <- iNEXT(inc_freq_spec, q = 0, datatype = "incidence_freq", nboot = 2)
+Hills_q_0_inc_CCZ_spec <- iNEXT(inc_freq_spec, q = 0, datatype = "incidence_freq", nboot = 10, endpoint = 15000)
 Hills_q_0_inc_CCZ_spec_df <- as.data.frame(Hills_q_0_inc_CCZ_spec$iNextEst$size_based)
 
 B_Chao2_species <- ggplot(Hills_q_0_inc_CCZ_spec_df %>% filter(Method != 'Observed')) +
@@ -177,7 +178,7 @@ family_matrix_CCZ <- family_CCZ_only %>%
 family_matrix_CCZ[is.na(family_matrix_CCZ)] <-  0
 
 family_matT <- as.matrix(t(family_matrix_CCZ))
-Hills_q_CCZ_family <- iNEXT::iNEXT(family_matT, q = 0, datatype = "abundance", nboot = 10)
+Hills_q_CCZ_family <- iNEXT::iNEXT(family_matT, q = 0, datatype = "abundance", nboot = 10, endpoint = 300000)
 Hills_q_CCZ_family_df <- as.data.frame(Hills_q_CCZ_family$iNextEst$size_based)
 
 C_Chao1_family <- ggplot(Hills_q_CCZ_family_df %>% filter(Method != 'Observed'), aes(x = m)) +
@@ -205,7 +206,7 @@ family_matrix_pres <- family_presAbs %>%
       reshape::cast(.,  site ~ family, value = "presence")
 family_matrix_pres[is.na(family_matrix_pres)] <-  0
 inc_freq_family <- as.incfreq(as.matrix(t(family_matrix_pres)))
-Hills_q_0_inc_CCZ_family <- iNEXT(inc_freq_family, q = 0, datatype = "incidence_freq", nboot = 2)
+Hills_q_0_inc_CCZ_family <- iNEXT(inc_freq_family, q = 0, datatype = "incidence_freq", nboot = 10, endpoint = 15000)
 Hills_q_0_inc_CCZ_family_df <- as.data.frame(Hills_q_0_inc_CCZ_family$iNextEst$size_based)
 
 D_Chao2_family <- ggplot(Hills_q_0_inc_CCZ_family_df %>% filter(Method != 'Observed')) +
@@ -222,7 +223,7 @@ D_Chao2_family <- ggplot(Hills_q_0_inc_CCZ_family_df %>% filter(Method != 'Obser
             legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
       xlab("Number of sampling units") +
       ylab("Family Diversity") +
-      # scale_y_continuous(breaks = seq(0, 6000, 1000)) +
+      scale_y_continuous(breaks = seq(0, 600, 100)) +
       scale_linetype_manual(values = c("dashed", "solid")); D_Chao2_family
 
 # Community matrix for genus abundance by single site: CCZ
@@ -236,7 +237,7 @@ genus_matrix_CCZ <- genus_CCZ_only %>%
 genus_matrix_CCZ[is.na(genus_matrix_CCZ)] <-  0
 
 genus_matT <- as.matrix(t(genus_matrix_CCZ))
-Hills_q_CCZ_genus <- iNEXT::iNEXT(genus_matT, q = 0, datatype = "abundance", nboot = 10)
+Hills_q_CCZ_genus <- iNEXT::iNEXT(genus_matT, q = 0, datatype = "abundance", nboot = 10, endpoint = 250000)
 Hills_q_CCZ_genus_df <- as.data.frame(Hills_q_CCZ_genus$iNextEst$size_based)
 
 E_Chao1_genus <- ggplot(Hills_q_CCZ_genus_df %>% filter(Method != 'Observed'), aes(x = m)) +
@@ -264,7 +265,7 @@ genus_matrix_pres <- genus_presAbs %>%
       reshape::cast(.,  site ~ genus, value = "presence")
 genus_matrix_pres[is.na(genus_matrix_pres)] <-  0
 inc_freq_genus <- as.incfreq(as.matrix(t(genus_matrix_pres)))
-Hills_q_0_inc_CCZ_genus <- iNEXT(inc_freq_genus, q = 0, datatype = "incidence_freq", nboot = 2)
+Hills_q_0_inc_CCZ_genus <- iNEXT(inc_freq_genus, q = 0, datatype = "incidence_freq", nboot = 10, endpoint = 15000)
 Hills_q_0_inc_CCZ_genus_df <- as.data.frame(Hills_q_0_inc_CCZ_genus$iNextEst$size_based)
 
 F_Chao2_genus <- ggplot(Hills_q_0_inc_CCZ_genus_df %>% filter(Method != 'Observed')) +
