@@ -1,0 +1,184 @@
+---
+title: "Biodiversity analysis"
+author: "Juliano Palacios-Abrantes"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, results='hide', message=FALSE, echo = F}
+
+library(MyFunctions)
+
+packages <- c(
+      "readxl", # Read dataframe
+      "tidyverse", # for all data wrangling and ggplot
+      "janitor",
+      "iNEXT"
+)
+
+my_lib(packages)
+rm(packages)
+# Fix new updates of sf package
+sf::sf_use_s2(use_s2 = FALSE)
+```
+
+# Load Data
+
+```{r}
+spp_biodiv_df <- my_path("D", name = "spp_biodiversity_data.csv", read = T)
+
+fam_biodiv_df <- my_path("D", name = "fam_biodiversity_data.csv", read = T)
+```
+
+# Species curve
+
+```{r}
+
+community_matrix_pres <- spp_biodiv_df %>% 
+      gather("site","value",cmnfi:united_states_geological_survey) %>%
+      dplyr::group_by(site, scientific_name) %>%
+      dplyr::summarise(presence = ifelse(sum(value) > 0, 1, 0)) %>%
+      reshape::cast(.,  site ~ scientific_name, value = "presence")
+
+community_matrix_pres[is.na(community_matrix_pres)] <-  0
+
+inc_freq <- as.incfreq(as.matrix(t(community_matrix_pres)))
+Hills_q_0_inc_CCZ <- iNEXT(inc_freq, q = 0, datatype = "incidence_freq", nboot = 1, endpoint = 100) # q and qdp is what plots
+Hills_q0_inc_df <- as.data.frame(Hills_q_0_inc_CCZ$iNextEst$size_based)
+
+# B_Chao2 <- 
+bio_spp <-
+ggplot(Hills_q0_inc_df %>% filter(Method != 'Observed')) +
+      # geom_ribbon(aes(x = t, ymin = qD.LCL, ymax = qD.UCL), fill = "coral2", alpha = 0.2, show.legend = FALSE) +      
+      geom_line(aes(x = t, y = qD, lty = Method), col = "coral2", cex = 1) +
+      geom_point(data = Hills_q0_inc_df %>% filter(Method == 'Observed'), aes(x = t, y = qD), col = "coral2", cex = 2) +
+      # theme(legend.justification = c(0, 1), 
+      #       legend.position = c(.5, .4),
+      #       legend.box.margin=margin(c(20, 20, 20, 20)),
+      #       legend.margin = margin(1, 1, 1, 1),
+      #       legend.spacing.x = unit(0, "mm"),
+      #       legend.spacing.y = unit(0, "mm"),
+      #       legend.title = element_blank(),
+      #       legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      # theme(text=element_text(size=20), #change font size of all text
+      #       axis.text=element_text(size=20), #change font size of axis text
+      #       axis.title=element_text(size=20), #change font size of axis titles
+      #       plot.title=element_text(size=20), #change font size of plot title
+      #       legend.text=element_text(size=20), #change font size of legend text
+      #       legend.title=element_text(size=20)) + 
+      xlab("") +
+      ylab("Species Diversity") +
+      my_ggtheme_p(leg_pos = "") +
+      scale_y_continuous(breaks = seq(0, 3000, 100)) +
+      scale_linetype_manual(values = c("twodash", "solid"))
+
+```
+
+## N
+
+In the context of the iNEXT package and biodiversity studies, N typically refers to the total number of sampling units or the total number of individuals observed in the dataset, depending on the type of data being analyzed.
+
+```{r}
+N <- nrow(community_matrix_pres)
+N
+```
+
+
+## S(Observ)
+
+In the context of biodiversity studies and using the iNEXT package, S(obs) refers to the observed species richness. This is the actual number of species observed in the samples collected. It is an important measure because it represents the baseline diversity observed in your data before any rarefaction or extrapolation.
+
+```{r}
+S_obs <- Hills_q_0_inc_CCZ$AsyEst$Observed[1] #544
+S_obs
+
+S_se <- Hills_q_0_inc_CCZ$AsyEst$Est_s.e.[1] #544
+
+N <- nrow(community_matrix_pres)
+N
+diversity_indices <- Hills_q_0_inc_CCZ$AsyEst
+
+write_csv(diversity_indices %>% mutate(category = c("Species Richness", "Shannon div.", "Simpson div"),
+                                             ,level = "secies",n = 11) %>% 
+                select(category,everything()),
+          "spp_diversity_indices.csv")
+
+```
+
+## Extrapolation max
+
+In the context of the iNEXT package, "extrapolation max" refers to the maximum sample size or maximum level of sample coverage to which the rarefaction and extrapolation curves are extended. This parameter is important as it defines how far beyond the observed data the diversity estimates are extrapolated.
+
+
+# Family curve
+
+```{r}
+
+community_matrix_pres <- fam_biodiv_df %>% 
+      gather("site","value",cmnfi:united_states_geological_survey) %>%
+      dplyr::group_by(site, family) %>%
+      dplyr::summarise(presence = ifelse(sum(value) > 0, 1, 0)) %>%
+      reshape::cast(.,  site ~ family, value = "presence")
+
+community_matrix_pres[is.na(community_matrix_pres)] <-  0
+
+inc_freq <- as.incfreq(as.matrix(t(community_matrix_pres)))
+Hills_q_0_inc_CCZ <- iNEXT(inc_freq, q = 0, datatype = "incidence_freq", nboot = 1, endpoint = 250) # q and qdp is what plots
+Hills_q0_inc_df <- as.data.frame(Hills_q_0_inc_CCZ$iNextEst$size_based)
+
+
+bio_fam <-
+ggplot(Hills_q0_inc_df %>% filter(Method != 'Observed')) +
+      geom_ribbon(aes(x = t, ymin = qD.LCL, ymax = qD.UCL), fill = "coral2", alpha = 0.2, show.legend = FALSE) +      
+      geom_line(aes(x = t, y = qD, lty = Method), col = "coral2", cex = 1) +
+      geom_point(data = Hills_q0_inc_df %>% filter(Method == 'Observed'), aes(x = t, y = qD), col = "coral2", cex = 2) +
+      # theme(legend.justification = c(0, 1), 
+      #       legend.position = c(.5, .4),
+      #       legend.box.margin=margin(c(20, 20, 20, 20)),
+      #       legend.margin = margin(1, 1, 1, 1),
+      #       legend.spacing.x = unit(0, "mm"),
+      #       legend.spacing.y = unit(0, "mm"),
+      #       legend.title = element_blank(),
+      #       legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+      # theme(text=element_text(size=20), #change font size of all text
+      #       axis.text=element_text(size=20), #change font size of axis text
+      #       axis.title=element_text(size=20), #change font size of axis titles
+      #       plot.title=element_text(size=20), #change font size of plot title
+      #       legend.text=element_text(size=20), #change font size of legend text
+      #       legend.title=element_text(size=20)) + 
+      xlab("Number of sampling units") +
+      ylab("Family Diversity") +
+      my_ggtheme_p(leg_pos = "bottom") +
+      # scale_y_continuous(breaks = seq(0, 6000, 1000)) +
+      scale_linetype_manual(values = c("twodash", "solid"))
+
+
+```
+
+```{r}
+N <- nrow(community_matrix_pres)
+N
+diversity_indices <- Hills_q_0_inc_CCZ$AsyEst
+
+write_csv(diversity_indices %>% mutate(category = c("Species Richness", "Shannon div.", "Simpson div"),
+                                             ,level = "family",n = 11) %>% 
+                select(category,everything()),
+          "fam_diversity_indices.csv")
+
+```
+
+```{r}
+
+pp <- gridExtra::grid.arrange(bio_spp,
+                        bio_fam,
+                        ncol = 1)
+ggsave(
+      "diversity_plots.png",
+      pp,
+      width = 7,
+      height = 7
+)
+
+
+```
+
