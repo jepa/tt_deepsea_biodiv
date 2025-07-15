@@ -1,0 +1,842 @@
+---
+title: "Point data analysis on the Exclusive Economic Zone of Trinidad and Tobago"
+author: "Juliano Palacios-Abrantes"
+date: "Last Update `r Sys.Date()`"
+output: pdf_document
+---
+
+
+
+```{r setup, include=FALSE}
+
+library(MyFunctions)
+
+packages <- c("tidyverse", 
+              "sf", # for loading shapefiles
+              "sp",
+              "gridExtra",
+              # "tools", # for loading shapefiles
+              # "here", # for easy paths
+              "rnaturalearth",
+              "viridis", # color-blind friendly pallets
+              # For bathymetry
+              "marmap",
+              "ggspatial"
+)
+
+my_lib(packages)
+
+# Needs to convert to D2
+# Fix new updates of sf package
+sf::sf_use_s2(use_s2 = FALSE)
+
+
+```
+
+
+# Instructions
+
+From Diva Amon's email. Plug these points into the Trinidad and Tobago EEZ so we can exclude points not within from our analysis.
+
+# Data
+
+
+## Barbados land and EEZ
+
+The Trinidad and Tobagos' (T&T) Exclusive Economic Zone shapefile was provided by the Sea Around Us (updated 1 July 2015, available from https ://www.seaaroundus.org). The shapefile from T&T high resolution landmass was retrieved from Natural Earth (https://www.naturalearthdata.com/) using the R package *rnaturalearth: World Map Data from Natural Earth* (Massicotte, 2024). 
+
+**Note:** It is very important that these data source are mentioned in the methods and referenced because your analysis of what to include/exclude directly relates to what shapefile you are using. 
+
+Massicotte P, South A (2024). rnaturalearth: World Map Data from Natural Earth. R package version 1.0.1.9000, https://github.com/ropensci/rnaturalearth, https://docs.ropensci.org/rnaturalearthhires/, https://docs.ropensci.org/rnaturalearth/.
+
+
+```{r load_trini_sf, eval = T, echo = F, results='hide', fig.height=5, fig.width=5, fig.align="center"}
+
+# Load trinidad SF
+trini_land_sf <- rnaturalearth::ne_download(scale=10, 
+                                            # type="ocean",
+                                            category="cultural", 
+                                            returnclass="sf"
+) %>% 
+  filter(NAME == "Trinidad and Tobago") %>% 
+  st_transform(4326) %>% 
+  select(NAME)
+
+# Load Barbados SF
+trini_eez_sf <- my_sf("SAU") %>% 
+  filter(name == "Trinidad & Tobago")
+
+# ggplot() +
+#   geom_sf(data = trini_eez_sf, aes(),fill = "lightblue") +
+#   geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite")
+
+
+```
+
+## Jaime's data
+
+```{r load_jaime_data, eval = T, echo = F, warning = F, message = F}
+
+jaime_df <- my_path("G","tropical_colab/jaime_map", "T&T Deep-Sea Data.xlsx", read = T) %>% 
+  rownames_to_column("rowid") %>%  # create row id to match latter with main data
+  mutate_at("rowid",as.numeric)
+
+# Create simplified table for ease estimation
+jaime_points <- jaime_df %>% 
+  select(rowid,decimal_latitude,decimal_longitude) %>% 
+  mutate_all(as.numeric)
+
+```
+
+## Check original points 
+
+First lets see if all points fall within T&T's Exclusive Economic Zone
+
+```{r plot_original_points, eval = T, echo = F, warning= FALSE, fig.pos='H', fig.height=4, fig.width=8, fig.align='center'}
+
+ggplot() +
+  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
+  geom_point(data = jaime_points,
+             aes(
+               x = decimal_longitude,
+               y = decimal_latitude
+             ),
+             size = 0.5
+  )
+
+```
+
+There seem to be around 5 points that fall outside the EEZ and one or two that are actually on land (Tobago), lets sort that out! 
+
+
+## Double check all points have data
+
+```{r check_na, eval = T, echo = F}
+
+clean_jaime_points <- jaime_points %>% 
+  filter(!(is.na(decimal_latitude) & is.na(decimal_longitude)))
+
+nrow(clean_jaime_points) - nrow(jaime_points)
+
+```
+
+**Note:** There are 26 rows that were removed from the analysis because they had wither a range of latitude/longitude value (n = 17) or no latitude or longitude information (n = 9). They will show up as *NA* in the final data set. The `rowid` for these points are:
+
+```{r rowids, eval = T, echo = F}
+jaime_points %>% filter((is.na(decimal_latitude) & is.na(decimal_longitude))) %>% pull(rowid) %>% print()
+```
+
+# Spatial Analysis
+
+
+## Step 1. Remove points from EEZ
+
+To identify what points are inside the T&T' EEZ (flagged as *keep*) and what points are outside (flagged as *remove*) we will use the function [*st_join*](https://www.rdocumentation.org/packages/sf/versions/1.0-18/topics/st_join) of the R package *sf*. We will first convert the points data into a shapefile to then join the points shapefile with the T&T's EEZ shapefile. This will allow us ti identify what points are *inside* the shapefile. 
+
+### 1.1. First we will flag any point that is *outside* the EEZ
+
+
+```{r points_inside_eez, eval = T, echo = F, message = F, warning = F, fig.pos='H', fig.align="center", fig.width=8, fig.height=5}
+
+# Transform jaime's data into a shapefile
+jaime_sf <- st_as_sf(clean_jaime_points, 
+                     coords = c("decimal_longitude", "decimal_latitude"), 
+                     crs = 4326) # make sure crs is the same in both shapefiles
+
+
+# Filter points outside EEZ
+points_in_trini <- jaime_sf %>%
+  st_join(trini_eez_sf, join = st_intersects) %>% 
+  mutate(
+    presence = ifelse(is.na(objectid),"remove","keep")
+  ) 
+
+
+
+eez_points <- points_in_trini %>% 
+  ggplot() +
+  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+  geom_sf(aes(color = presence))
+# geom_sf(aes(color = rowid)) 
+
+eez_points
+
+# plotly::ggplotly(eez_points)
+```
+
+Note that there are some points that seem to be reight-at-the-EEZ-border. They are actually not on it when you zoom in. Some are in and some are out. See below an example of the points located ~59 W and ~10 N, ~60 W and ~10 N, and around Tobago.
+
+```{r zoom_to_border, eval = T, echo =F, warning= FALSE, message=F, fig.pos='H',fig.width=10, fig.height=10, fig.align='center'}
+
+grid.arrange(
+  eez_points +
+    xlim(-59.4,-59.3)  +
+    ylim(10,10.1),
+  eez_points +
+    xlim(-60.1,-59.9)  +
+    ylim(9.9,10.1),
+  eez_points +
+    xlim(-60.9,-60.5)  +
+    ylim(11.1,11.4),
+  eez_points +
+    xlim(-60.8,-60.7)  +
+    ylim(11.2,11.3),
+  ncol =2
+) 
+```
+
+## Step 2. Remove points from land
+
+Now we are just going to double check the points we flagged as inside the T&T's EEZ are not on land using the natural Earth high resolution land polygon.
+
+```{r plot_points_land, eval = T, echo =F,  message = F, warning = F, fig.pos='H',fig.width=5, fig.height=5, fig.align='center'}
+
+points_in_trini %>% 
+  ggplot() +
+  geom_sf(data = trini_land_sf, aes(),fill = "transparent") +
+  geom_sf(aes(color = presence)) +
+  xlim(-60.9,-60.5)  +
+  ylim(11.1,11.4)
+```
+Actually, in this case the SAU EEZ polygon seems to have a better ressolution than the `naturalearth` map anyways. So great! Now it looks like we have all of our data points flagged inside and outside the EEZ. Last step is to incorporate that into the original data set as a new column variable. I will call that variable `point_in_eez`
+
+## Step 3. Incorporate information into original data
+
+```{r check_data, eval = T, echo =F, message = F, warning= FALSE, fig.pos='H',fig.width=8, fig.height=5, fig.align='center'}
+
+trini_points_df <- as.data.frame(points_in_trini) %>% 
+  select(rowid,presence) %>% 
+  filter(presence == "keep") %>% 
+  left_join(jaime_points)
+
+
+ggplot() +
+  geom_sf(data = trini_land_sf, aes(),fill = "transparent") +
+  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+  geom_point(data = trini_points_df,
+             aes(
+               x = decimal_longitude,
+               y = decimal_latitude,
+               color = presence
+             )
+  )
+
+```
+
+
+```{r write_data, eval = F, echo =F, message = F, warning= FALSE}
+
+jaime_df %>% 
+  left_join(trini_points_df %>% select(rowid,presence)) %>%
+  # View()
+  mutate(point_in_eez = ifelse(is.na(presence) & !is.na(decimal_latitude),"remove",presence)) %>% 
+  # filter(rowid == 1427) %>% 
+  # View()
+  select(-presence) %>% 
+  openxlsx::write.xlsx(.,
+                       my_path("G","tropical_colab/jaime_map","T&T Deep-Sea Data_jepa.xlsx"))
+
+```
+
+# Finally we plot all the points
+
+```{r all_the_points, eval = T, echo = F, message = F, warning = F, fig.pos='H',fig.width=10, fig.height=8, fig.align='center'}
+
+jaime_df %>% 
+  left_join(trini_points_df %>% select(rowid,presence)) %>%
+  mutate(point_in_eez = ifelse(is.na(presence) & !is.na(decimal_latitude),"remove",presence)) %>% 
+  filter(!is.na(point_in_eez)) %>% 
+  # View()
+  select(-presence) %>% 
+  ggplot() +
+  geom_point(
+    aes(
+      x = as.numeric(decimal_longitude),
+      y = as.numeric(decimal_latitude),
+      color = point_in_eez
+    ),
+    size = 0.5
+  ) +
+  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+  theme_classic()
+# xlim(-62,-52) +
+# ylim(10,18) 
+```
+
+# Map creation
+
+## Load needed data
+
+```{r}
+
+jaime_data <- my_path("G","tropical_colab/jaime_map","T&T Deep-Sea Data_jepa.xlsx", read = T) %>% 
+  filter(point_in_eez == "keep")
+
+points_magnitude <- jaime_data %>% 
+  filter(point_in_eez == "keep") %>% 
+  mutate(
+      lat = round(as.numeric(decimal_latitude),2),
+    lon = round(as.numeric(decimal_longitude),2)
+  ) %>% 
+  group_by(lat,lon) %>% 
+  tally() %>% 
+  mutate(
+    n_bins = cut(n, breaks = c(1,10, 11, 50, 135),include.lowest = TRUE, right = FALSE)
+  )
+
+points_gear <- jaime_data %>% 
+  filter(point_in_eez == "keep") %>% 
+  mutate(
+      lat = round(as.numeric(decimal_latitude),2),
+    lon = round(as.numeric(decimal_longitude),2)
+  ) %>% 
+  group_by(lat,lon,gear_group) %>% 
+  tally() %>% 
+  mutate(
+    # sampling_protocol = ifelse(is.na(sampling_protocol),"Not reported",sampling_protocol),
+    n_bins = cut(n, breaks = c(1,10, 11, 50, 120),include.lowest = TRUE, right = FALSE),
+    gear_group = ifelse(gear_group == "Trawl NET","Midwater Trawl",
+                        ifelse(gear_group == "Grab - Sampler","Grab",
+                               ifelse(gear_group == "HOV","Human Occupied Vehicle",
+                                      ifelse(gear_group == "ROV","Remotely Operated Vehicle",
+                                             ifelse(gear_group == "Trawl","Benthic Trawl",gear_group))
+                               )))
+  )
+
+unique(points_gear$gear_group)
+
+# Trinidad land
+trini_land_sf <- rnaturalearth::ne_download(scale=10, 
+                                            # type="ocean",
+                                            category="cultural", 
+                                            returnclass="sf"
+) %>% 
+  filter(NAME == "Trinidad and Tobago") %>% 
+  st_transform(4326) %>% 
+  select(NAME)
+
+# Load trinidad SF
+trini_eez_sf <- my_sf("SAU") %>% 
+  filter(name == "Trinidad & Tobago")
+
+# # Get NOAA bathymetri data
+bathy_map <- getNOAA.bathy(lon1 = -62.1,
+                           lon2 = -57,
+                           lat1 =  12.4,
+                           lat2 = 9.7,
+                           resolution = 0.1)
+
+# Transform into spatial polygon
+sp_bath <- as.SpatialGridDataFrame(bathy_map)
+
+# transform layer to be eveything higher than 1, 1
+sp_bath$z_transformed <- ifelse(sp_bath$layer > 0, 1,
+                                ifelse(sp_bath$layer < -4500, -4500,
+                                       sp_bath$layer))
+
+
+# Get countour 
+countour_200 <- as.xyz(bathy_map)
+
+# ggplot()+
+#   geom_contour(data = countour_200, 
+#                aes(x = V1, y = V2, z = V3),
+#                breaks = -200, color = "grey85", 
+#                size = 0.5)
+
+
+# Oil shaopefiles
+oil_sf <- st_read(my_path("G","tropical_colab/jaime_map/oil_shps", "202106_TT_MEEI_dWGS84_offshore_blocks_Trinidad_and_Tobago.shp")) %>% 
+  # Remove the Z component for ease computation
+    st_zm(drop = TRUE) %>% 
+  mutate(status = ifelse(Status == "LICENSED", "Leased oil blocks",""))
+
+# ggplot(oil_sf) +
+  # geom_sf()
+
+```
+
+## The map
+
+```{r}
+library(wesanderson)
+
+pal <- wes_palette("Zissou1", 50, type = "continuous")
+
+ggplot() +
+  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
+  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+  geom_contour(data = depth_isobar %>% filter(depth_cap <= -200),
+               aes(x,
+                   y, 
+                   z=depth_cap,
+                   color = depth_cap,
+                   alpha = depth_cap
+               ),
+               colour = "white",
+               linetype = "dashed",
+               linewidth = 0.1
+  ) +
+  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
+  geom_point(data = jaime_data,
+             aes(
+               x = as.numeric(decimal_longitude),
+               y = as.numeric(decimal_latitude)
+             ),
+             size =0.2
+  ) +
+  # scale_color_gradient( # blue version
+  scale_color_viridis_b(
+  # scale_color_gradientn( # wes anderson version
+  # colours = rev(pal), # wes anderson version
+    "Bathymetry (m)",
+    limits = c(-4500,1),
+    breaks = c(0, -200, seq(-500, -5000, by = -1000)),  # Breaks at 0, 200, and then every 500 meters
+    labels = c("0", "-200", seq(-500, -4000, by = -1000),"< -4500")  # Custom labels for these breaks
+  ) +
+  # Remove space from plot to axis
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  annotation_north_arrow(
+    location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
+    style = north_arrow_fancy_orienteering
+  ) +
+  # incluir escala
+  annotation_scale(
+    location = "br",
+    width_hint = 0.3 # Tamanho da escala como fração do tamanho da figura
+  ) + 
+  my_ggtheme_m("regional",
+               leg_pos = "right",
+               ax_tx_s = 9,
+               ax_tl_s = 12,
+               leg_tx_s = 8) +
+  theme(
+    legend.key.height = unit(2.5, "line")
+  ) +
+  labs(
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  geom_text(
+    aes(
+      x = c(-61.2),
+      y = c(11.52),
+      label = "200m"
+    ),
+    size = 2,
+    color = "white"
+  )+
+  geom_text(
+    aes(
+      x = c(-60.2),
+      y = c(10.6),
+      label = "200m"
+    ),
+    size = 2,
+    color = "white",
+    angle = -75
+  )
+
+
+ggsave(
+  # "./map_figure/jaime_map.png",
+  # "./map_figure/jaime_map_blue.png",
+  "./map_figure/jaime_map_color_blind.png",
+  last_plot(),
+  width = 7,
+  height = 4
+  
+)
+```
+
+### Blue depth version
+
+```{r}
+ggplot() +
+  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
+  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+  geom_contour(data = depth_isobar %>% filter(depth_cap <= -200),
+               aes(x,
+                   y, 
+                   z=depth_cap,
+                   color = depth_cap,
+                   alpha = depth_cap
+               ),
+               colour = "white",
+               linetype = "dashed",
+               linewidth = 0.1
+  ) +
+  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
+  geom_point(data = points_magnitude,
+             aes(
+               x = lon,
+               y = lat,
+               shape = n_bins
+             ),
+             size = 1,
+             alpha = 0.5
+             
+  ) +
+    scale_shape_manual("Number of data points",values = c(0,1,2,3,4)) +  # Custom shapes
+  scale_color_gradient(
+    "Bathymetry (m)",
+    # colours = rev(pal),
+    limits = c(-4500,1),
+    breaks = c(0, -200, seq(-500, -5000, by = -1000)),  # Breaks at 0, 200, and then every 500 meters
+    labels = c("0", "-200", seq(-500, -4000, by = -1000),"< -4500")  # Custom labels for these breaks
+  ) +
+  # Remove space from plot to axis
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  annotation_north_arrow(
+    location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
+    style = north_arrow_fancy_orienteering
+  ) +
+  # incluir escala
+  annotation_scale(
+    location = "br",
+    width_hint = 0.3 # Tamanho da escala como fração do tamanho da figura
+  ) + 
+  my_ggtheme_m("regional",
+               leg_pos = "right",
+               ax_tx_s = 9,
+               ax_tl_s = 12,
+               leg_tl_s = 6,
+               leg_tx_s = 5
+               ) +
+  theme(
+    legend.key.height = unit(1.5, "line")
+  ) +
+  labs(
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  geom_text(
+    aes(
+      x = c(-61.2),
+      y = c(11.52),
+      label = "200m"
+    ),
+    size = 2,
+    color = "white"
+  )+
+  geom_text(
+    aes(
+      x = c(-60.2),
+      y = c(10.6),
+      label = "200m"
+    ),
+    size = 2,
+    color = "white",
+    angle = -75
+  )
+
+
+ggsave(
+  "./map_figure/jaime_map_points_numbers.png",
+  last_plot(),
+  width = 9,
+  height = 5
+  
+)
+```
+
+### Further modification
+
+- The scale: The scale on the colour-blind-friendly map appears to be reversed. Could you correct this?
+
+ -- Done
+
+- Enhance the 200 m contour and EEZ line: These are key features, so it would be helpful if they were made more prominent.
+
+- Shapes for sample counts: The different shapes for the number of samples are very helpful for visualization. Let’s retain that feature.
+
+
+------ 
+
+- Contour Lines:
+
+  - We’d like to remove the contour lines entirely, as the distinct colours and scale make the     information clear without them. (Makes the map less busy).
+  
+  *Done*
+
+  - For the 200m contour line specifically, we suggest making it bold and clear, rather than dashed, for better visibility.
+  
+  *Done, I made it balck so it distib=nguishes from the other white lines*
+
+- Colour Zones:
+  - Could you confirm if the 200–500m zone is represented by the green colour?
+  
+*I adjusted the scale so now everything outside yellow is <-200*
+
+- Also, regarding the 200m line, should it align with the convergence of the yellow and green zones, or is it positioned that way due to the same factors causing some points to appear shallow?
+
+*Its aligned now that I fixed the scale*
+
+Is fixed now
+
+- Oil Blocks:
+
+  - For the gridlines of the oil blocks, we’d like to change them to white.
+  
+*Done*
+
+  - There’s no need to differentiate between the blocks except for the leased blocks. For those, we’d like the entire block to have a very slightly shaded overlay to set them apart subtly.
+
+*Done*
+  
+Scale for Data Points:
+Could we adjust the scale for the number of data points to three categories: 1–10, 11–50, and 50+?
+
+*Done*
+
+```{r}
+
+main_map <- ggplot() +
+  # layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
+  geom_raster(data = gebco_df, aes(x = x, y = y, fill = depth)) +
+  # geom_sf(data = oil_sf %>% filter(status == "Leased oil blocks"), aes(fill = status), color = "white",alpha = 0.3) +
+  geom_sf(data = oil_sf %>% filter(status != "Leased oil blocks"), aes(), fill = "transparent", color = "white") +
+  geom_sf(data = oil_sf %>% filter(status == "Leased oil blocks"), aes(), fill = "grey30", alpha = 0.3, color = "white") +
+  # geom_contour(data = countour_200,aes(x = V1,y = V2,z = V3),
+  #              colour = "black",
+  #              linewidth = 0.5,
+  #              breaks = -200
+  # ) +
+  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
+  geom_point(data = points_magnitude,
+             aes(
+               x = lon,
+               y = lat,
+               shape = n_bins
+             ),
+             size = 1
+             
+  ) +
+    scale_shape_manual("Number of data points",values = c(0,1,2,3,4)) +  # Custom shapes
+   # scale_linetype("Oil blocks") +
+  # scale_fill_grey("")+
+  scale_fill_viridis_c(
+    "Bathymetry (m)",
+    # direction = -1,
+    alpha = 0.8,
+    limits = c(-5000,1),
+    breaks = rev(c(1, -200, seq(-500, -5500, by = -1000))),  # Breaks at 0, 200, and then every 500 meters
+    labels = rev(c("0", "-200", seq(-500, -4500, by = -1000),"< -5000"))  # Custom labels for these breaks
+  ) +
+  # Remove space from plot to axis
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  annotation_north_arrow(
+    location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
+    style = north_arrow_fancy_orienteering
+  ) +
+  # incluir escala
+  annotation_scale(
+    location = "br",
+    width_hint = 0.3 # Tamanho da escala como fração do tamanho da figura
+  ) + 
+  my_ggtheme_m("regional",
+               leg_pos = "right",
+               ax_tx_s = 9,
+               ax_tl_s = 12,
+               leg_tl_s = 4,
+               leg_tx_s = 2,
+               hjust = 0.5
+               ) +
+  theme(
+    legend.key.height = unit(2, "line"),
+    axis.ticks = element_line(),
+    legend.text = element_text(size = 8)
+  ) +
+  labs(
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  geom_text(
+    aes(
+      x = c(-61.2),
+      y = c(11.52),
+      label = "-200m"
+    ),
+    size = 4,
+    color = "black"
+  )
+
+ggsave(
+  "./map_figure/jaime_map_points_numbers_oil_gebco.png",
+  main_map,
+  width = 10,
+  height = 6
+  
+)
+```
+
+
+
+- Shallow-water points: There seem to be some points plotted in shallow water. Would it be possible to confirm which data points these are so we can double-check?
+
+_ Your data has a column minimum_depth_in_meters that shows some points under 200 m.  
+
+
+```{r}
+
+# 
+shallow_points_sf <-jaime_data %>% 
+  mutate(
+    lat = round(as.numeric(decimal_latitude),2),
+    lon = round(as.numeric(decimal_longitude),2)
+  ) %>% 
+  st_as_sf(.,
+           coords = c("lon","lat"),
+           crs = 4326)
+
+# st_crs(pm_sf) <- 4326
+
+# Transform sp into sf
+sp_bath_sf <-  st_as_sf(sp_bath,
+         coords = c("s1","s2"),
+         crs = 4326)
+
+# st_crs(sp_bath_sf) <- 4326
+
+
+shallow_points_combined_sf <- st_join(shallow_points_sf,sp_bath_sf,
+                join = st_nearest_feature) %>% 
+  mutate(
+    noaa_depth = ifelse(layer > -200,"shallow","deep")
+    )
+
+
+
+
+ggplot() +
+  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.8) +
+  # scale_color_continuous(limits = c(-199,0)) +
+  geom_contour(data = depth_isobar %>% filter(depth_cap <= -200),
+               aes(x,
+                   y,
+                   z=depth_cap,
+                   color = depth_cap
+               ),
+               colour = "black",
+               linetype = "dashed",
+               linewidth = 0.5
+  ) +
+  geom_sf(data = trini_eez_sf, aes(),color = "black", fill = "transparent", linewidth = 0.5) +
+  geom_sf(data = shallow_points_combined_sf %>% filter(noaa_depth == "shallow"), aes(shape = noaa_depth)) +
+  ggtitle("Ressolution of 0.001 minutes")
+  
+
+# Incorporate data into Jaime's data
+
+jaime_data_shallow <- as.data.frame(shallow_points_combined_sf) %>% 
+  select(rowid,noaa_depth) %>% 
+  left_join(jaime_data)
+
+write_csv(jaime_data_shallow,
+          "jaime_data_shallow.csv")
+  
+```
+
+
+## Map by sampling gear
+
+We really like the version of the maps that separates each gear type-it’s very clean and easy to interpret.
+
+- We agree it’s better to join similar sampling methods, so the following groupings make sense:
+
+**NOTE JEPA: This was manually made on excell by me**
+
+  - Combine all ROV methods.
+  - Combine all HOV methods.
+  - Combine all Trawl methods (except for the Trawl 10ft IKM)
+  - Combine Trawl 10ft IKM and Net (these target the midwater coloumn)
+  - Grab Sampler
+  - Unknown
+
+This would result in six separate maps, arranged in a vertical line.
+
+- We think it’s sufficient to include just one North arrow and one scale bar for the entire figure.
+
+- Would it be possible to show the 200m line on these maps?
+
+- We also like that these maps are clean and simple, with no bathymetry included.
+
+- Lastly, could the scale of the data points be adjusted to match the main map (1–10, 11–50, 50+)?
+
+```{r}
+
+gear_map <- ggplot() +
+  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
+  geom_sf(data = trini_eez_sf, aes(),color = "grey", fill = "transparent", linewidth = 0.5) +
+  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
+  geom_point(data = points_gear,
+             aes(
+               x = lon,
+               y = lat,
+               shape = n_bins
+             ),
+             size = 2
+             
+  ) +
+  scale_color_viridis_c(
+    "Bathymetry (m)",
+    # direction = -1,
+    alpha = 0.8,
+    limits = c(-4500,1),
+    breaks = rev(c(1, -200, seq(-500, -5000, by = -1000))),  # Breaks at 0, 200, and then every 500 meters
+    labels = rev(c("0", "-200", seq(-500, -4000, by = -1000),"< -4500"))  # Custom labels for these breaks
+  ) +
+  # Remove space from plot to axis
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_shape_manual("Number of\ndata points",values = c(0,1,2,3,4)) +  # Custom shapes
+  scale_linetype("") +
+  annotation_north_arrow(
+    data = subset(points_gear, gear_group == "Benthic Trawl"),
+    location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
+    style = north_arrow_fancy_orienteering,
+    height = unit(1, "cm"),
+    width = unit(1, "cm")
+  ) +
+  # incluir escala
+  annotation_scale(
+    data = subset(points_gear, gear_group == "Unknown"),
+    location = "br",
+    width_hint = 0.3, # Tamanho da escala como fração do tamanho da figura
+    
+  ) + 
+  my_ggtheme_m("regional",
+               leg_pos = "right",
+               ax_tx_s = 9,
+               ax_tl_s = 12,
+               leg_tl_s = 6,
+               leg_tx_s = 5,
+               hjust = 0.5
+               
+               ) +
+  theme(
+    legend.key.height = unit(2, "line"),
+    axis.ticks = element_line(),
+    legend.text = element_text(size = 8)
+  ) +
+  labs(
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  facet_wrap(~gear_group, ncol = 2)
+
+ggsave(
+  "jaime_map_points_per_gear_facet_bathy_b.png",
+  gear_map,
+  width = 8,
+  height = 7
+)
+
+```
+
+
+
