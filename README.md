@@ -22,7 +22,7 @@ tt_deepsea_biodiv/
 ├── R/                              # Custom R functions used throughout the project
 │   ├── *Data_S5.R*                 # original script from `howlerMoonkey/CCZ_BIODIVERSITY:main` only for reference
 │   ├── *biodiv_script.Rmd*         # script with the current Chao2 analysis
-│   ├── *tt_spatial_analysis.Rmd*   # script for producing maps figures
+│   └──  *tt_spatial_analysis.Rmd*   # script for producing maps figures
 ├── .gitignore                      # Specifies which files/folders Git should ignore
 ├── LICENSE                         # License file (e.g., MIT, CC BY-NC 4.0)
 ├── tt_deepsea_biodiv.Rproj         # RStudio project file
