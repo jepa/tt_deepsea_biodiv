@@ -6,7 +6,7 @@ This repository contains the code for a project on the Baseline Assessment of De
 
 Jaime-Leigh Lue Chin^1^, Muriel Rabone^2^, Juliano Palacios-Abrantes^3^, Judith Gobin^1^, Alana Jute^4^, La Daana Kanhai^1^, Diva J. Amon^1,5,6^
 
-# Affiliation
+## Affiliations
 
 1.  Department of Life Sciences, The University of the West Indies, St. Augustine, Trinidad and Tobago
 2.  Natural History Museum, London, UK
