@@ -793,7 +793,7 @@ gear_map <- ggplot() +
   # Remove space from plot to axis
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
-  scale_shape_manual("Number of\ndata points",values = c(0,1,2,3,4)) +  # Custom shapes
+  scale_shape_manual("Number of Deep-Sea\nBiological Records",values = c(0,1,2,3,4)) +  # Custom shapes
   scale_linetype("") +
   annotation_north_arrow(
     data = subset(points_gear, gear_group == "Benthic Trawl"),
