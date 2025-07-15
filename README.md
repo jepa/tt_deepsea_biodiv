@@ -1,8 +1,6 @@
-# tt_deepsea_biodiv
-
 # A Baseline Assessment of Deep-Sea Biodiversity, and Guide for Future Actions to Inform Stewardship, in Trinidad and Tobago
 
-This repository contains the code for a project on the Baseline Assessment of Deep-Sea Biodiversity in Trinidad and Tobago lead by Jamie Edghill.
+This repository contains the code for a project on the Baseline Assessment of Deep-Sea Biodiversity in Trinidad and Tobago lead by Jamie Edghill. It is partially based on [howlerMoonkey/CCZ_BIODIVERSITY:main](https://github.com/howlerMoonkey/CCZ_BIODIVERSITY).
 
 # Authors
 
