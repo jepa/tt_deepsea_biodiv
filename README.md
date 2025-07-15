@@ -17,7 +17,9 @@ Jaime-Leigh Lue Chin^1^, Muriel Rabone^2^, Judith Gobin^1^, Alana Jute^3^, La Da
  
 # Folder organization
 
-
+- *R*, folder containing the necessary scripts
+   - *Data_S5.R*, original script from `howlerMoonkey/CCZ_BIODIVERSITY:main`
+   - *biodiv_script.Rmd*, script with the current analysis
 
 
 
