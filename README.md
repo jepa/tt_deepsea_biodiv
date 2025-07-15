@@ -15,7 +15,9 @@ Jaime-Leigh Lue Chin^1^, Muriel Rabone^2^, Juliano Palacios-Abrantes^3^, Judith 
 5.  Marine Science Institute, University of California, Santa Barbara, Santa Barbara, CA, USA
 6.  SpeSeas, D’Abadie, Trinidad and Tobago
 
-# Folder organization
+*Corresponding author: Jaime-Leigh Lue Chin, jaimeleigh.edghill[at]my.uwi.edu
+
+# Files and folders organization
 
 ```         
 tt_deepsea_biodiv/                    
@@ -28,6 +30,17 @@ tt_deepsea_biodiv/
 ├── tt_deepsea_biodiv.Rproj         # RStudio project file
 └── README.md
 ```
+
+# Data Availability 
+
+## Primary data
+The primary dataset for this article will be provided in the Supplementary Information Table 1 (*Pending*). Additionally, new records currently not included on OBIS will eventually be uploaded.
+
+## Support data
+- *SAUEEZ_July2015.shp*, This is the Sea Around Us (SAU) shapefile for the world EEZs. Contact the [SAU](http://www.seaaroundus.org/) for a version of it. 
+- *bathy_map*, Data avialble from NOAA National Centers for Environmental Information. 2022: ETOPO 2022 15 Arc-Second Global Relief Model. NOAA National Centers for Environmental Information. tools:::Rd_expr_doi("doi.org/10.25921/fd45-gt74")
+- *202106_TT_MEEI_dWGS84_offshore_blocks_Trinidad_and_Tobago.shp*, shapefile of oil leases in the T&T EEZ. Contact main author for data.
+
 
 # References
 
