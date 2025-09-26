@@ -337,7 +337,8 @@ sp_bath$z_transformed <- ifelse(sp_bath$layer > 0, 1,
 
 
 # Get countour 
-countour_200 <- as.xyz(bathy_map)
+depth_isobar <- as.xyz(bathy_map) %>% 
+        rename(x = V1, y = V2, depth_cap = V3)
 
 # ggplot()+
 #   geom_contour(data = countour_200, 
@@ -367,13 +368,14 @@ pal <- wes_palette("Zissou1", 50, type = "continuous")
 ggplot() +
   layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
   geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
-  geom_contour(data = depth_isobar %>% filter(depth_cap <= -200),
+  geom_contour(data = depth_isobar,
                aes(x,
                    y, 
                    z=depth_cap,
                    color = depth_cap,
                    alpha = depth_cap
                ),
+               breaks = -200,
                colour = "white",
                linetype = "dashed",
                linewidth = 0.1
@@ -451,99 +453,8 @@ ggsave(
 )
 ```
 
-### Blue depth version
 
-```{r}
-ggplot() +
-  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
-  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
-  geom_contour(data = depth_isobar %>% filter(depth_cap <= -200),
-               aes(x,
-                   y, 
-                   z=depth_cap,
-                   color = depth_cap,
-                   alpha = depth_cap
-               ),
-               colour = "white",
-               linetype = "dashed",
-               linewidth = 0.1
-  ) +
-  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
-  geom_point(data = points_magnitude,
-             aes(
-               x = lon,
-               y = lat,
-               shape = n_bins
-             ),
-             size = 1,
-             alpha = 0.5
-             
-  ) +
-    scale_shape_manual("Number of data points",values = c(0,1,2,3,4)) +  # Custom shapes
-  scale_color_gradient(
-    "Bathymetry (m)",
-    # colours = rev(pal),
-    limits = c(-4500,1),
-    breaks = c(0, -200, seq(-500, -5000, by = -1000)),  # Breaks at 0, 200, and then every 500 meters
-    labels = c("0", "-200", seq(-500, -4000, by = -1000),"< -4500")  # Custom labels for these breaks
-  ) +
-  # Remove space from plot to axis
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  annotation_north_arrow(
-    location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
-    style = north_arrow_fancy_orienteering
-  ) +
-  # incluir escala
-  annotation_scale(
-    location = "br",
-    width_hint = 0.3 # Tamanho da escala como fração do tamanho da figura
-  ) + 
-  my_ggtheme_m("regional",
-               leg_pos = "right",
-               ax_tx_s = 9,
-               ax_tl_s = 12,
-               leg_tl_s = 6,
-               leg_tx_s = 5
-               ) +
-  theme(
-    legend.key.height = unit(1.5, "line")
-  ) +
-  labs(
-    x = "Longitude",
-    y = "Latitude"
-  ) +
-  geom_text(
-    aes(
-      x = c(-61.2),
-      y = c(11.52),
-      label = "200m"
-    ),
-    size = 2,
-    color = "white"
-  )+
-  geom_text(
-    aes(
-      x = c(-60.2),
-      y = c(10.6),
-      label = "200m"
-    ),
-    size = 2,
-    color = "white",
-    angle = -75
-  )
-
-
-ggsave(
-  "./map_figure/jaime_map_points_numbers.png",
-  last_plot(),
-  width = 9,
-  height = 5
-  
-)
-```
-
-### Further modification
+## Further modification
 
 - The scale: The scale on the colour-blind-friendly map appears to be reversed. Could you correct this?
 
@@ -595,16 +506,17 @@ Could we adjust the scale for the number of data points to three categories: 1�
 ```{r}
 
 main_map <- ggplot() +
-  # layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
-  geom_raster(data = gebco_df, aes(x = x, y = y, fill = depth)) +
-  # geom_sf(data = oil_sf %>% filter(status == "Leased oil blocks"), aes(fill = status), color = "white",alpha = 0.3) +
+  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
   geom_sf(data = oil_sf %>% filter(status != "Leased oil blocks"), aes(), fill = "transparent", color = "white") +
   geom_sf(data = oil_sf %>% filter(status == "Leased oil blocks"), aes(), fill = "grey30", alpha = 0.3, color = "white") +
-  # geom_contour(data = countour_200,aes(x = V1,y = V2,z = V3),
-  #              colour = "black",
-  #              linewidth = 0.5,
-  #              breaks = -200
-  # ) +
+  geom_contour(data = countour_200,
+               aes(x = x,
+                   y = y,
+                   z = depth_cap),
+               colour = "black",
+               linewidth = 0.5,
+               breaks = -200
+  ) +
   geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
   geom_point(data = points_magnitude,
              aes(
@@ -613,12 +525,12 @@ main_map <- ggplot() +
                shape = n_bins
              ),
              size = 1
-             
+
   ) +
-    scale_shape_manual("Number of data points",values = c(0,1,2,3,4)) +  # Custom shapes
-   # scale_linetype("Oil blocks") +
-  # scale_fill_grey("")+
-  scale_fill_viridis_c(
+  scale_shape_manual("Number of data points",values = c(0,1,2,3,4)) +  # Custom shapes
+  scale_linetype("Oil blocks") +
+  scale_fill_grey("")+
+  scale_color_viridis_c(
     "Bathymetry (m)",
     # direction = -1,
     alpha = 0.8,
