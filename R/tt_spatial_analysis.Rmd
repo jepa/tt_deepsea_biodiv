@@ -58,13 +58,13 @@ trini_land_sf <- rnaturalearth::ne_download(scale=10,
                                             category="cultural", 
                                             returnclass="sf"
 ) %>% 
-  filter(NAME == "Trinidad and Tobago") %>% 
-  st_transform(4326) %>% 
-  select(NAME)
+      filter(NAME == "Trinidad and Tobago") %>% 
+      st_transform(4326) %>% 
+      select(NAME)
 
 # Load Barbados SF
 trini_eez_sf <- my_sf("SAU") %>% 
-  filter(name == "Trinidad & Tobago")
+      filter(name == "Trinidad & Tobago")
 
 # ggplot() +
 #   geom_sf(data = trini_eez_sf, aes(),fill = "lightblue") +
@@ -78,13 +78,13 @@ trini_eez_sf <- my_sf("SAU") %>%
 ```{r load_jaime_data, eval = T, echo = F, warning = F, message = F}
 
 jaime_df <- my_path("G","tropical_colab/jaime_map", "T&T Deep-Sea Data.xlsx", read = T) %>% 
-  rownames_to_column("rowid") %>%  # create row id to match latter with main data
-  mutate_at("rowid",as.numeric)
+      rownames_to_column("rowid") %>%  # create row id to match latter with main data
+      mutate_at("rowid",as.numeric)
 
 # Create simplified table for ease estimation
 jaime_points <- jaime_df %>% 
-  select(rowid,decimal_latitude,decimal_longitude) %>% 
-  mutate_all(as.numeric)
+      select(rowid,decimal_latitude,decimal_longitude) %>% 
+      mutate_all(as.numeric)
 
 ```
 
@@ -95,15 +95,15 @@ First lets see if all points fall within T&T's Exclusive Economic Zone
 ```{r plot_original_points, eval = T, echo = F, warning= FALSE, fig.pos='H', fig.height=4, fig.width=8, fig.align='center'}
 
 ggplot() +
-  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
-  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
-  geom_point(data = jaime_points,
-             aes(
-               x = decimal_longitude,
-               y = decimal_latitude
-             ),
-             size = 0.5
-  )
+      geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+      geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
+      geom_point(data = jaime_points,
+                 aes(
+                       x = decimal_longitude,
+                       y = decimal_latitude
+                 ),
+                 size = 0.5
+      )
 
 ```
 
@@ -115,7 +115,7 @@ There seem to be around 5 points that fall outside the EEZ and one or two that a
 ```{r check_na, eval = T, echo = F}
 
 clean_jaime_points <- jaime_points %>% 
-  filter(!(is.na(decimal_latitude) & is.na(decimal_longitude)))
+      filter(!(is.na(decimal_latitude) & is.na(decimal_longitude)))
 
 nrow(clean_jaime_points) - nrow(jaime_points)
 
@@ -147,17 +147,17 @@ jaime_sf <- st_as_sf(clean_jaime_points,
 
 # Filter points outside EEZ
 points_in_trini <- jaime_sf %>%
-  st_join(trini_eez_sf, join = st_intersects) %>% 
-  mutate(
-    presence = ifelse(is.na(objectid),"remove","keep")
-  ) 
+      st_join(trini_eez_sf, join = st_intersects) %>% 
+      mutate(
+            presence = ifelse(is.na(objectid),"remove","keep")
+      ) 
 
 
 
 eez_points <- points_in_trini %>% 
-  ggplot() +
-  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
-  geom_sf(aes(color = presence))
+      ggplot() +
+      geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+      geom_sf(aes(color = presence))
 # geom_sf(aes(color = rowid)) 
 
 eez_points
@@ -170,19 +170,19 @@ Note that there are some points that seem to be reight-at-the-EEZ-border. They a
 ```{r zoom_to_border, eval = T, echo =F, warning= FALSE, message=F, fig.pos='H',fig.width=10, fig.height=10, fig.align='center'}
 
 grid.arrange(
-  eez_points +
-    xlim(-59.4,-59.3)  +
-    ylim(10,10.1),
-  eez_points +
-    xlim(-60.1,-59.9)  +
-    ylim(9.9,10.1),
-  eez_points +
-    xlim(-60.9,-60.5)  +
-    ylim(11.1,11.4),
-  eez_points +
-    xlim(-60.8,-60.7)  +
-    ylim(11.2,11.3),
-  ncol =2
+      eez_points +
+            xlim(-59.4,-59.3)  +
+            ylim(10,10.1),
+      eez_points +
+            xlim(-60.1,-59.9)  +
+            ylim(9.9,10.1),
+      eez_points +
+            xlim(-60.9,-60.5)  +
+            ylim(11.1,11.4),
+      eez_points +
+            xlim(-60.8,-60.7)  +
+            ylim(11.2,11.3),
+      ncol =2
 ) 
 ```
 
@@ -193,11 +193,11 @@ Now we are just going to double check the points we flagged as inside the T&T's 
 ```{r plot_points_land, eval = T, echo =F,  message = F, warning = F, fig.pos='H',fig.width=5, fig.height=5, fig.align='center'}
 
 points_in_trini %>% 
-  ggplot() +
-  geom_sf(data = trini_land_sf, aes(),fill = "transparent") +
-  geom_sf(aes(color = presence)) +
-  xlim(-60.9,-60.5)  +
-  ylim(11.1,11.4)
+      ggplot() +
+      geom_sf(data = trini_land_sf, aes(),fill = "transparent") +
+      geom_sf(aes(color = presence)) +
+      xlim(-60.9,-60.5)  +
+      ylim(11.1,11.4)
 ```
 Actually, in this case the SAU EEZ polygon seems to have a better ressolution than the `naturalearth` map anyways. So great! Now it looks like we have all of our data points flagged inside and outside the EEZ. Last step is to incorporate that into the original data set as a new column variable. I will call that variable `point_in_eez`
 
@@ -206,21 +206,21 @@ Actually, in this case the SAU EEZ polygon seems to have a better ressolution th
 ```{r check_data, eval = T, echo =F, message = F, warning= FALSE, fig.pos='H',fig.width=8, fig.height=5, fig.align='center'}
 
 trini_points_df <- as.data.frame(points_in_trini) %>% 
-  select(rowid,presence) %>% 
-  filter(presence == "keep") %>% 
-  left_join(jaime_points)
+      select(rowid,presence) %>% 
+      filter(presence == "keep") %>% 
+      left_join(jaime_points)
 
 
 ggplot() +
-  geom_sf(data = trini_land_sf, aes(),fill = "transparent") +
-  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
-  geom_point(data = trini_points_df,
-             aes(
-               x = decimal_longitude,
-               y = decimal_latitude,
-               color = presence
-             )
-  )
+      geom_sf(data = trini_land_sf, aes(),fill = "transparent") +
+      geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+      geom_point(data = trini_points_df,
+                 aes(
+                       x = decimal_longitude,
+                       y = decimal_latitude,
+                       color = presence
+                 )
+      )
 
 ```
 
@@ -228,14 +228,14 @@ ggplot() +
 ```{r write_data, eval = F, echo =F, message = F, warning= FALSE}
 
 jaime_df %>% 
-  left_join(trini_points_df %>% select(rowid,presence)) %>%
-  # View()
-  mutate(point_in_eez = ifelse(is.na(presence) & !is.na(decimal_latitude),"remove",presence)) %>% 
-  # filter(rowid == 1427) %>% 
-  # View()
-  select(-presence) %>% 
-  openxlsx::write.xlsx(.,
-                       my_path("G","tropical_colab/jaime_map","T&T Deep-Sea Data_jepa.xlsx"))
+      left_join(trini_points_df %>% select(rowid,presence)) %>%
+      # View()
+      mutate(point_in_eez = ifelse(is.na(presence) & !is.na(decimal_latitude),"remove",presence)) %>% 
+      # filter(rowid == 1427) %>% 
+      # View()
+      select(-presence) %>% 
+      openxlsx::write.xlsx(.,
+                           my_path("G","tropical_colab/jaime_map","T&T Deep-Sea Data_jepa.xlsx"))
 
 ```
 
@@ -244,22 +244,22 @@ jaime_df %>%
 ```{r all_the_points, eval = T, echo = F, message = F, warning = F, fig.pos='H',fig.width=10, fig.height=8, fig.align='center'}
 
 jaime_df %>% 
-  left_join(trini_points_df %>% select(rowid,presence)) %>%
-  mutate(point_in_eez = ifelse(is.na(presence) & !is.na(decimal_latitude),"remove",presence)) %>% 
-  filter(!is.na(point_in_eez)) %>% 
-  # View()
-  select(-presence) %>% 
-  ggplot() +
-  geom_point(
-    aes(
-      x = as.numeric(decimal_longitude),
-      y = as.numeric(decimal_latitude),
-      color = point_in_eez
-    ),
-    size = 0.5
-  ) +
-  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
-  theme_classic()
+      left_join(trini_points_df %>% select(rowid,presence)) %>%
+      mutate(point_in_eez = ifelse(is.na(presence) & !is.na(decimal_latitude),"remove",presence)) %>% 
+      filter(!is.na(point_in_eez)) %>% 
+      # View()
+      select(-presence) %>% 
+      ggplot() +
+      geom_point(
+            aes(
+                  x = as.numeric(decimal_longitude),
+                  y = as.numeric(decimal_latitude),
+                  color = point_in_eez
+            ),
+            size = 0.5
+      ) +
+      geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+      theme_classic()
 # xlim(-62,-52) +
 # ylim(10,18) 
 ```
@@ -271,38 +271,38 @@ jaime_df %>%
 ```{r}
 
 jaime_data <- my_path("G","tropical_colab/jaime_map","T&T Deep-Sea Data_jepa.xlsx", read = T) %>% 
-  filter(point_in_eez == "keep")
+      filter(point_in_eez == "keep")
 
 points_magnitude <- jaime_data %>% 
-  filter(point_in_eez == "keep") %>% 
-  mutate(
-      lat = round(as.numeric(decimal_latitude),2),
-    lon = round(as.numeric(decimal_longitude),2)
-  ) %>% 
-  group_by(lat,lon) %>% 
-  tally() %>% 
-  mutate(
-    n_bins = cut(n, breaks = c(1,10, 11, 50, 135),include.lowest = TRUE, right = FALSE)
-  )
+      filter(point_in_eez == "keep") %>% 
+      mutate(
+            lat = round(as.numeric(decimal_latitude),2),
+            lon = round(as.numeric(decimal_longitude),2)
+      ) %>% 
+      group_by(lat,lon) %>% 
+      tally() %>% 
+      mutate(
+            n_bins = cut(n, breaks = c(1,10, 11, 50, 135),include.lowest = TRUE, right = FALSE)
+      )
 
 points_gear <- jaime_data %>% 
-  filter(point_in_eez == "keep") %>% 
-  mutate(
-      lat = round(as.numeric(decimal_latitude),2),
-    lon = round(as.numeric(decimal_longitude),2)
-  ) %>% 
-  group_by(lat,lon,gear_group) %>% 
-  tally() %>% 
-  mutate(
-    # sampling_protocol = ifelse(is.na(sampling_protocol),"Not reported",sampling_protocol),
-    n_bins = cut(n, breaks = c(1,10, 11, 50, 120),include.lowest = TRUE, right = FALSE),
-    gear_group = ifelse(gear_group == "Trawl NET","Midwater Trawl",
-                        ifelse(gear_group == "Grab - Sampler","Grab",
-                               ifelse(gear_group == "HOV","Human Occupied Vehicle",
-                                      ifelse(gear_group == "ROV","Remotely Operated Vehicle",
-                                             ifelse(gear_group == "Trawl","Benthic Trawl",gear_group))
-                               )))
-  )
+      filter(point_in_eez == "keep") %>% 
+      mutate(
+            lat = round(as.numeric(decimal_latitude),2),
+            lon = round(as.numeric(decimal_longitude),2)
+      ) %>% 
+      group_by(lat,lon,gear_group) %>% 
+      tally() %>% 
+      mutate(
+            # sampling_protocol = ifelse(is.na(sampling_protocol),"Not reported",sampling_protocol),
+            n_bins = cut(n, breaks = c(1,10, 11, 50, 120),include.lowest = TRUE, right = FALSE),
+            gear_group = ifelse(gear_group == "Trawl NET","Midwater Trawl",
+                                ifelse(gear_group == "Grab - Sampler","Grab",
+                                       ifelse(gear_group == "HOV","Human Occupied Vehicle",
+                                              ifelse(gear_group == "ROV","Remotely Operated Vehicle",
+                                                     ifelse(gear_group == "Trawl","Benthic Trawl",gear_group))
+                                       )))
+      )
 
 unique(points_gear$gear_group)
 
@@ -312,13 +312,13 @@ trini_land_sf <- rnaturalearth::ne_download(scale=10,
                                             category="cultural", 
                                             returnclass="sf"
 ) %>% 
-  filter(NAME == "Trinidad and Tobago") %>% 
-  st_transform(4326) %>% 
-  select(NAME)
+      filter(NAME == "Trinidad and Tobago") %>% 
+      st_transform(4326) %>% 
+      select(NAME)
 
 # Load trinidad SF
 trini_eez_sf <- my_sf("SAU") %>% 
-  filter(name == "Trinidad & Tobago")
+      filter(name == "Trinidad & Tobago")
 
 # # Get NOAA bathymetri data
 bathy_map <- getNOAA.bathy(lon1 = -62.1,
@@ -338,7 +338,7 @@ sp_bath$z_transformed <- ifelse(sp_bath$layer > 0, 1,
 
 # Get countour 
 depth_isobar <- as.xyz(bathy_map) %>% 
-        rename(x = V1, y = V2, depth_cap = V3)
+      rename(x = V1, y = V2, depth_cap = V3)
 
 # ggplot()+
 #   geom_contour(data = countour_200, 
@@ -349,12 +349,12 @@ depth_isobar <- as.xyz(bathy_map) %>%
 
 # Oil shaopefiles
 oil_sf <- st_read(my_path("G","tropical_colab/jaime_map/oil_shps", "202106_TT_MEEI_dWGS84_offshore_blocks_Trinidad_and_Tobago.shp")) %>% 
-  # Remove the Z component for ease computation
-    st_zm(drop = TRUE) %>% 
-  mutate(status = ifelse(Status == "LICENSED", "Leased oil blocks",""))
+      # Remove the Z component for ease computation
+      st_zm(drop = TRUE) %>% 
+      mutate(status = ifelse(Status == "LICENSED", "Leased oil blocks",""))
 
 # ggplot(oil_sf) +
-  # geom_sf()
+# geom_sf()
 
 ```
 
@@ -366,90 +366,90 @@ library(wesanderson)
 pal <- wes_palette("Zissou1", 50, type = "continuous")
 
 ggplot() +
-  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
-  geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
-  geom_contour(data = depth_isobar,
-               aes(x,
-                   y, 
-                   z=depth_cap,
-                   color = depth_cap,
-                   alpha = depth_cap
-               ),
-               breaks = -200,
-               colour = "white",
-               linetype = "dashed",
-               linewidth = 0.1
-  ) +
-  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
-  geom_point(data = jaime_data,
-             aes(
-               x = as.numeric(decimal_longitude),
-               y = as.numeric(decimal_latitude)
-             ),
-             size =0.2
-  ) +
-  # scale_color_gradient( # blue version
-  scale_color_viridis_b(
-  # scale_color_gradientn( # wes anderson version
-  # colours = rev(pal), # wes anderson version
-    "Bathymetry (m)",
-    limits = c(-4500,1),
-    breaks = c(0, -200, seq(-500, -5000, by = -1000)),  # Breaks at 0, 200, and then every 500 meters
-    labels = c("0", "-200", seq(-500, -4000, by = -1000),"< -4500")  # Custom labels for these breaks
-  ) +
-  # Remove space from plot to axis
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  annotation_north_arrow(
-    location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
-    style = north_arrow_fancy_orienteering
-  ) +
-  # incluir escala
-  annotation_scale(
-    location = "br",
-    width_hint = 0.3 # Tamanho da escala como fração do tamanho da figura
-  ) + 
-  my_ggtheme_m("regional",
-               leg_pos = "right",
-               ax_tx_s = 9,
-               ax_tl_s = 12,
-               leg_tx_s = 8) +
-  theme(
-    legend.key.height = unit(2.5, "line")
-  ) +
-  labs(
-    x = "Longitude",
-    y = "Latitude"
-  ) +
-  geom_text(
-    aes(
-      x = c(-61.2),
-      y = c(11.52),
-      label = "200m"
-    ),
-    size = 2,
-    color = "white"
-  )+
-  geom_text(
-    aes(
-      x = c(-60.2),
-      y = c(10.6),
-      label = "200m"
-    ),
-    size = 2,
-    color = "white",
-    angle = -75
-  )
+      layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
+      geom_sf(data = trini_eez_sf, aes(),fill = "transparent") +
+      geom_contour(data = depth_isobar,
+                   aes(x,
+                       y, 
+                       z=depth_cap,
+                       color = depth_cap,
+                       alpha = depth_cap
+                   ),
+                   breaks = -200,
+                   colour = "white",
+                   linetype = "dashed",
+                   linewidth = 0.1
+      ) +
+      geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
+      geom_point(data = jaime_data,
+                 aes(
+                       x = as.numeric(decimal_longitude),
+                       y = as.numeric(decimal_latitude)
+                 ),
+                 size =0.2
+      ) +
+      # scale_color_gradient( # blue version
+      scale_color_viridis_b(
+            # scale_color_gradientn( # wes anderson version
+            # colours = rev(pal), # wes anderson version
+            "Bathymetry (m)",
+            limits = c(-4500,1),
+            breaks = c(0, -200, seq(-500, -5000, by = -1000)),  # Breaks at 0, 200, and then every 500 meters
+            labels = c("0", "-200", seq(-500, -4000, by = -1000),"< -4500")  # Custom labels for these breaks
+      ) +
+      # Remove space from plot to axis
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      annotation_north_arrow(
+            location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
+            style = north_arrow_fancy_orienteering
+      ) +
+      # incluir escala
+      annotation_scale(
+            location = "br",
+            width_hint = 0.3 # Tamanho da escala como fração do tamanho da figura
+      ) + 
+      my_ggtheme_m("regional",
+                   leg_pos = "right",
+                   ax_tx_s = 9,
+                   ax_tl_s = 12,
+                   leg_tx_s = 8) +
+      theme(
+            legend.key.height = unit(2.5, "line")
+      ) +
+      labs(
+            x = "Longitude",
+            y = "Latitude"
+      ) +
+      geom_text(
+            aes(
+                  x = c(-61.2),
+                  y = c(11.52),
+                  label = "200m"
+            ),
+            size = 2,
+            color = "white"
+      )+
+      geom_text(
+            aes(
+                  x = c(-60.2),
+                  y = c(10.6),
+                  label = "200m"
+            ),
+            size = 2,
+            color = "white",
+            angle = -75
+      )
 
 
 ggsave(
-  # "./map_figure/jaime_map.png",
-  # "./map_figure/jaime_map_blue.png",
-  "./map_figure/jaime_map_color_blind.png",
-  last_plot(),
-  width = 7,
-  height = 4
-  
+      # "./map_figure/jaime_map.png",
+      # "./map_figure/jaime_map_blue.png",
+      "./map_figure/jaime_map_color_blind.png",
+      last_plot(),
+      width = 7,
+      height = 4
+      
 )
 ```
 
@@ -458,7 +458,7 @@ ggsave(
 
 - The scale: The scale on the colour-blind-friendly map appears to be reversed. Could you correct this?
 
- -- Done
+-- Done
 
 - Enhance the 200 m contour and EEZ line: These are key features, so it would be helpful if they were made more prominent.
 
@@ -469,17 +469,17 @@ ggsave(
 
 - Contour Lines:
 
-  - We’d like to remove the contour lines entirely, as the distinct colours and scale make the     information clear without them. (Makes the map less busy).
-  
-  *Done*
+- We’d like to remove the contour lines entirely, as the distinct colours and scale make the     information clear without them. (Makes the map less busy).
 
-  - For the 200m contour line specifically, we suggest making it bold and clear, rather than dashed, for better visibility.
-  
-  *Done, I made it balck so it distib=nguishes from the other white lines*
+*Done*
+
+- For the 200m contour line specifically, we suggest making it bold and clear, rather than dashed, for better visibility.
+
+*Done, I made it balck so it distib=nguishes from the other white lines*
 
 - Colour Zones:
-  - Could you confirm if the 200–500m zone is represented by the green colour?
-  
+- Could you confirm if the 200–500m zone is represented by the green colour?
+
 *I adjusted the scale so now everything outside yellow is <-200*
 
 - Also, regarding the 200m line, should it align with the convergence of the yellow and green zones, or is it positioned that way due to the same factors causing some points to appear shallow?
@@ -490,14 +490,14 @@ Is fixed now
 
 - Oil Blocks:
 
-  - For the gridlines of the oil blocks, we’d like to change them to white.
-  
-*Done*
-
-  - There’s no need to differentiate between the blocks except for the leased blocks. For those, we’d like the entire block to have a very slightly shaded overlay to set them apart subtly.
+- For the gridlines of the oil blocks, we’d like to change them to white.
 
 *Done*
-  
+
+- There’s no need to differentiate between the blocks except for the leased blocks. For those, we’d like the entire block to have a very slightly shaded overlay to set them apart subtly.
+
+*Done*
+
 Scale for Data Points:
 Could we adjust the scale for the number of data points to three categories: 1–10, 11–50, and 50+?
 
@@ -505,85 +505,129 @@ Could we adjust the scale for the number of data points to three categories: 1�
 
 ```{r}
 
-main_map <- ggplot() +
-  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
-  geom_sf(data = oil_sf %>% filter(status != "Leased oil blocks"), aes(), fill = "transparent", color = "white") +
-  geom_sf(data = oil_sf %>% filter(status == "Leased oil blocks"), aes(), fill = "grey30", alpha = 0.3, color = "white") +
-  geom_contour(data = countour_200,
-               aes(x = x,
-                   y = y,
-                   z = depth_cap),
-               colour = "black",
-               linewidth = 0.5,
-               breaks = -200
-  ) +
-  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
-  geom_point(data = points_magnitude,
-             aes(
-               x = lon,
-               y = lat,
-               shape = n_bins
-             ),
-             size = 1
+# Remove brkets and parenthesis and change coma for dash
+points_magnitude$n_bins <- gsub("\\[|\\]", "", points_magnitude$n_bins)  # make all round brackets
+points_magnitude$n_bins <- gsub("\\(|\\)", "", points_magnitude$n_bins)  # make all round brackets
+points_magnitude$n_bins <- gsub(",", "–", points_magnitude$n_bins)
 
-  ) +
-  scale_shape_manual("Number of data points",values = c(0,1,2,3,4)) +  # Custom shapes
-  scale_linetype("Oil blocks") +
-  scale_fill_grey("")+
-  scale_color_viridis_c(
-    "Bathymetry (m)",
-    # direction = -1,
-    alpha = 0.8,
-    limits = c(-5000,1),
-    breaks = rev(c(1, -200, seq(-500, -5500, by = -1000))),  # Breaks at 0, 200, and then every 500 meters
-    labels = rev(c("0", "-200", seq(-500, -4500, by = -1000),"< -5000"))  # Custom labels for these breaks
-  ) +
-  # Remove space from plot to axis
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  annotation_north_arrow(
-    location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
-    style = north_arrow_fancy_orienteering
-  ) +
-  # incluir escala
-  annotation_scale(
-    location = "br",
-    width_hint = 0.3 # Tamanho da escala como fração do tamanho da figura
-  ) + 
-  my_ggtheme_m("regional",
-               leg_pos = "right",
-               ax_tx_s = 9,
-               ax_tl_s = 12,
-               leg_tl_s = 4,
-               leg_tx_s = 2,
-               hjust = 0.5
-               ) +
-  theme(
-    legend.key.height = unit(2, "line"),
-    axis.ticks = element_line(),
-    legend.text = element_text(size = 8)
-  ) +
-  labs(
-    x = "Longitude",
-    y = "Latitude"
-  ) +
-  geom_text(
-    aes(
-      x = c(-61.2),
-      y = c(11.52),
-      label = "-200m"
-    ),
-    size = 4,
-    color = "black"
-  )
+
+main_map <- ggplot() +
+      layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
+      geom_sf(data = oil_sf %>% filter(status != "Leased oil blocks"), aes(), fill = "transparent", color = "white",linewidth = 0.3) +
+      geom_sf(data = oil_sf %>% filter(status == "Leased oil blocks"), aes(fill = status), alpha = 0.3, color = "white",linewidth = 0.3) +
+      geom_sf(data = trini_eez_sf, aes(),fill = "transparent", color = "grey70") +
+      geom_contour(data = depth_isobar,
+                   aes(x,
+                       y,
+                       z=depth_cap,
+                       color = depth_cap,
+                       alpha = depth_cap
+                   ),
+                   breaks = -200,
+                   colour = "black",
+                   # linetype = "dashed",
+                   linewidth = 0.5
+      ) +
+      geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
+      geom_point(data = points_magnitude,
+                 aes(
+                       x = lon,
+                       y = lat,
+                       shape = n_bins
+                 ),
+                 size = 2
+                 
+      ) +
+      scale_shape_manual("Number of Deep-Sea\nBiological Record",values = c(0,1,2,3,4)) +  # Custom shapes
+      scale_linetype("Oil blocks") +
+      scale_fill_grey("")+
+      scale_color_viridis_c(
+            "Depth (meters)",
+            # direction = -1,
+            alpha = 0.8,
+            limits = c(-4500,1),
+            breaks = rev(c(1, -200, seq(-500, -4500, by = -1000))),  # Breaks at 0, 200, and then every 500 meters
+            labels = rev(c("0", "200", seq(500, 3500, by = 1000),"< 4500"))  # Custom labels for these breaks
+      ) +
+      # Remove space from plot to axis
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      annotation_north_arrow(
+            location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
+            style = north_arrow_fancy_orienteering
+      ) +
+      # incluir escala
+      annotation_scale(
+            location = "br",
+            width_hint = 0.3 # Tamanho da escala como fração do tamanho da figura
+      ) +
+      # Include names
+      annotate(
+            "text",
+            x = -61.25,  # x-position
+            y = 10.5,        # y-position (slightly above the point)
+            label = "Trinidad",  # the text to show
+            color = "black",
+            # fontface = "bold",
+            size = 3
+      ) +
+      annotate(
+            "text",
+            x = -60.64,
+            y = 11.26, 
+            label = "Tobago", 
+            color = "black",
+            angle = 19,
+            size = 2
+      ) +
+      annotate(
+            "text",
+            x = -59.35,  
+            y = 11.13,        
+            label = "El Pilar", 
+            color = "black",
+            size = 3
+      ) +
+      my_ggtheme_m("regional",
+                   leg_pos = "right",
+                   ax_tx_s = 9,
+                   ax_tl_s = 12,
+                   leg_tl_s = 4,
+                   leg_tx_s = 2,
+                   hjust = 0.5
+      ) +
+      theme(
+            legend.key.height = unit(2, "line"),
+            axis.ticks = element_line(),
+            legend.text = element_text(size = 8)
+      ) +
+      labs(
+            x = "Longitude",
+            y = "Latitude"
+      ) +
+      geom_text(
+            aes(
+                  x = c(-61.2),
+                  y = c(11.52),
+                  label = "200m"
+            ),
+            size = 4,
+            color = "black"
+      ) +
+      guides(
+            fill = guide_legend(order = 1),
+            shape = guide_legend(order = 2)
+            # color = guide_legend(order = 3)
+      )
 
 ggsave(
-  "./map_figure/jaime_map_points_numbers_oil_gebco.png",
-  main_map,
-  width = 10,
-  height = 6
-  
+      "./map_figure/jaime_map_revised.png",
+      main_map,
+      width = 10,
+      height = 6
+      
 )
+
 ```
 
 
@@ -597,60 +641,60 @@ _ Your data has a column minimum_depth_in_meters that shows some points under 20
 
 # 
 shallow_points_sf <-jaime_data %>% 
-  mutate(
-    lat = round(as.numeric(decimal_latitude),2),
-    lon = round(as.numeric(decimal_longitude),2)
-  ) %>% 
-  st_as_sf(.,
-           coords = c("lon","lat"),
-           crs = 4326)
+      mutate(
+            lat = round(as.numeric(decimal_latitude),2),
+            lon = round(as.numeric(decimal_longitude),2)
+      ) %>% 
+      st_as_sf(.,
+               coords = c("lon","lat"),
+               crs = 4326)
 
 # st_crs(pm_sf) <- 4326
 
 # Transform sp into sf
 sp_bath_sf <-  st_as_sf(sp_bath,
-         coords = c("s1","s2"),
-         crs = 4326)
+                        coords = c("s1","s2"),
+                        crs = 4326)
 
 # st_crs(sp_bath_sf) <- 4326
 
 
 shallow_points_combined_sf <- st_join(shallow_points_sf,sp_bath_sf,
-                join = st_nearest_feature) %>% 
-  mutate(
-    noaa_depth = ifelse(layer > -200,"shallow","deep")
-    )
+                                      join = st_nearest_feature) %>% 
+      mutate(
+            noaa_depth = ifelse(layer > -200,"shallow","deep")
+      )
 
 
 
 
 ggplot() +
-  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.8) +
-  # scale_color_continuous(limits = c(-199,0)) +
-  geom_contour(data = depth_isobar %>% filter(depth_cap <= -200),
-               aes(x,
-                   y,
-                   z=depth_cap,
-                   color = depth_cap
-               ),
-               colour = "black",
-               linetype = "dashed",
-               linewidth = 0.5
-  ) +
-  geom_sf(data = trini_eez_sf, aes(),color = "black", fill = "transparent", linewidth = 0.5) +
-  geom_sf(data = shallow_points_combined_sf %>% filter(noaa_depth == "shallow"), aes(shape = noaa_depth)) +
-  ggtitle("Ressolution of 0.001 minutes")
-  
+      layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.8) +
+      # scale_color_continuous(limits = c(-199,0)) +
+      geom_contour(data = depth_isobar %>% filter(depth_cap <= -200),
+                   aes(x,
+                       y,
+                       z=depth_cap,
+                       color = depth_cap
+                   ),
+                   colour = "black",
+                   linetype = "dashed",
+                   linewidth = 0.5
+      ) +
+      geom_sf(data = trini_eez_sf, aes(),color = "black", fill = "transparent", linewidth = 0.5) +
+      geom_sf(data = shallow_points_combined_sf %>% filter(noaa_depth == "shallow"), aes(shape = noaa_depth)) +
+      ggtitle("Ressolution of 0.001 minutes")
+
 
 # Incorporate data into Jaime's data
 
 jaime_data_shallow <- as.data.frame(shallow_points_combined_sf) %>% 
-  select(rowid,noaa_depth) %>% 
-  left_join(jaime_data)
+      select(rowid,noaa_depth) %>% 
+      left_join(jaime_data)
 
 write_csv(jaime_data_shallow,
           "jaime_data_shallow.csv")
-  
+
 ```
 
 
@@ -662,12 +706,12 @@ We really like the version of the maps that separates each gear type-it’s very
 
 **NOTE JEPA: This was manually made on excell by me**
 
-  - Combine all ROV methods.
-  - Combine all HOV methods.
-  - Combine all Trawl methods (except for the Trawl 10ft IKM)
-  - Combine Trawl 10ft IKM and Net (these target the midwater coloumn)
-  - Grab Sampler
-  - Unknown
+- Combine all ROV methods.
+- Combine all HOV methods.
+- Combine all Trawl methods (except for the Trawl 10ft IKM)
+- Combine Trawl 10ft IKM and Net (these target the midwater coloumn)
+- Grab Sampler
+- Unknown
 
 This would result in six separate maps, arranged in a vertical line.
 
@@ -682,70 +726,70 @@ This would result in six separate maps, arranged in a vertical line.
 ```{r}
 
 gear_map <- ggplot() +
-  layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
-  geom_sf(data = trini_eez_sf, aes(),color = "grey", fill = "transparent", linewidth = 0.5) +
-  geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
-  geom_point(data = points_gear,
-             aes(
-               x = lon,
-               y = lat,
-               shape = n_bins
-             ),
-             size = 2
-             
-  ) +
-  scale_color_viridis_c(
-    "Bathymetry (m)",
-    # direction = -1,
-    alpha = 0.8,
-    limits = c(-4500,1),
-    breaks = rev(c(1, -200, seq(-500, -5000, by = -1000))),  # Breaks at 0, 200, and then every 500 meters
-    labels = rev(c("0", "-200", seq(-500, -4000, by = -1000),"< -4500"))  # Custom labels for these breaks
-  ) +
-  # Remove space from plot to axis
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  scale_shape_manual("Number of Deep-Sea\nBiological Records",values = c(0,1,2,3,4)) +  # Custom shapes
-  scale_linetype("") +
-  annotation_north_arrow(
-    data = subset(points_gear, gear_group == "Benthic Trawl"),
-    location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
-    style = north_arrow_fancy_orienteering,
-    height = unit(1, "cm"),
-    width = unit(1, "cm")
-  ) +
-  # incluir escala
-  annotation_scale(
-    data = subset(points_gear, gear_group == "Unknown"),
-    location = "br",
-    width_hint = 0.3, # Tamanho da escala como fração do tamanho da figura
-    
-  ) + 
-  my_ggtheme_m("regional",
-               leg_pos = "right",
-               ax_tx_s = 9,
-               ax_tl_s = 12,
-               leg_tl_s = 6,
-               leg_tx_s = 5,
-               hjust = 0.5
-               
-               ) +
-  theme(
-    legend.key.height = unit(2, "line"),
-    axis.ticks = element_line(),
-    legend.text = element_text(size = 8)
-  ) +
-  labs(
-    x = "Longitude",
-    y = "Latitude"
-  ) +
-  facet_wrap(~gear_group, ncol = 2)
+      layer_spatial(data = sp_bath, aes(col = z_transformed), alpha = 0.5) +
+      geom_sf(data = trini_eez_sf, aes(),color = "grey", fill = "transparent", linewidth = 0.5) +
+      geom_sf(data = trini_land_sf, aes(),fill = "antiquewhite") +
+      geom_point(data = points_gear,
+                 aes(
+                       x = lon,
+                       y = lat,
+                       shape = n_bins
+                 ),
+                 size = 2
+                 
+      ) +
+      scale_color_viridis_c(
+            "Bathymetry (m)",
+            # direction = -1,
+            alpha = 0.8,
+            limits = c(-4500,1),
+            breaks = rev(c(1, -200, seq(-500, -5000, by = -1000))),  # Breaks at 0, 200, and then every 500 meters
+            labels = rev(c("0", "-200", seq(-500, -4000, by = -1000),"< -4500"))  # Custom labels for these breaks
+      ) +
+      # Remove space from plot to axis
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      scale_shape_manual("Number of Deep-Sea\nBiological Records",values = c(0,1,2,3,4)) +  # Custom shapes
+      scale_linetype("") +
+      annotation_north_arrow(
+            data = subset(points_gear, gear_group == "Benthic Trawl"),
+            location = "tr", # Possição: "bl" pra bottom left, "br" pra bottom right, etc.
+            style = north_arrow_fancy_orienteering,
+            height = unit(1, "cm"),
+            width = unit(1, "cm")
+      ) +
+      # incluir escala
+      annotation_scale(
+            data = subset(points_gear, gear_group == "Unknown"),
+            location = "br",
+            width_hint = 0.3, # Tamanho da escala como fração do tamanho da figura
+            
+      ) + 
+      my_ggtheme_m("regional",
+                   leg_pos = "right",
+                   ax_tx_s = 9,
+                   ax_tl_s = 12,
+                   leg_tl_s = 6,
+                   leg_tx_s = 5,
+                   hjust = 0.5
+                   
+      ) +
+      theme(
+            legend.key.height = unit(2, "line"),
+            axis.ticks = element_line(),
+            legend.text = element_text(size = 8)
+      ) +
+      labs(
+            x = "Longitude",
+            y = "Latitude"
+      ) +
+      facet_wrap(~gear_group, ncol = 2)
 
 ggsave(
-  "jaime_map_points_per_gear_facet_bathy_b.png",
-  gear_map,
-  width = 8,
-  height = 7
+      "jaime_map_points_per_gear_facet_bathy_b.png",
+      gear_map,
+      width = 8,
+      height = 7
 )
 
 ```
