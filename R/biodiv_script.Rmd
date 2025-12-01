@@ -63,7 +63,7 @@ run_biodiv_analysis <- function(df_subset) {
       community_matrix_pres[is.na(community_matrix_pres)] <- 0
       
       inc_freq <- as.incfreq(as.matrix(t(community_matrix_pres)))
-      iNEXT(inc_freq, q = 0, datatype = "incidence_freq", nboot = 1, endpoint = 125) # Benthic is 125 and pelagic is 250
+      iNEXT(inc_freq, q = 0, datatype = "incidence_freq", nboot = 1, endpoint = 50) # Benthic is 125 and pelagic is 250
 }
 
 
@@ -85,6 +85,12 @@ pelagic_df <- as.data.frame(results_list$Pelagic$iNextEst$size_based) %>%
 
 # Combine both into one data frame
 Hills_q0_panel_df <- bind_rows(benthic_df, pelagic_df)
+
+# delta <- Hills_q0_panel_df %>%
+#   arrange(t) %>%
+#       group_by(Group,Method) %>% 
+#   mutate(delta = c(NA, diff(qD))) %>%   # change in richness between steps
+#   filter(abs(delta) > 10) 
 
 bio_spp <-
   ggplot(Hills_q0_panel_df %>% filter(Method != "Observed")) +
@@ -122,7 +128,7 @@ ggsave(bio_spp,
 
 In the context of the iNEXT package and biodiversity studies, N typically refers to the total number of sampling units or the total number of individuals observed in the dataset, depending on the type of data being analyzed.
 
-```{r}
+```{r, eval = FALSE}
 N <- nrow(community_matrix_pres)
 N
 ```
@@ -136,11 +142,11 @@ In the context of biodiversity studies and using the iNEXT package, S(obs) refer
 
 # For Benthic species
 sb_obs <- results_list$Benthic$AsyEst$Observed[1] # 313
-sb_se <- results_list$Benthic$AsyEst$Est_s.e.[1] #78.12
+sb_se <- results_list$Benthic$AsyEst$Est_s.e.[1] #76.3628
 
 # For Pelagic species
 sp_obs <- results_list$Pelagic$AsyEst$Observed[1] # 137
-sb_se <- results_list$Pelagic$AsyEst$Est_s.e.[1] #218
+sb_se <- results_list$Pelagic$AsyEst$Est_s.e.[1] #226.61
 
 
 bind_rows(
