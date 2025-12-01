@@ -547,7 +547,12 @@ main_map <- ggplot() +
             alpha = 0.8,
             limits = c(-4500,1),
             breaks = rev(c(1, -200, seq(-500, -4500, by = -1000))),  # Breaks at 0, 200, and then every 500 meters
-            labels = rev(c("0", "200", seq(500, 3500, by = 1000),"< 4500"))  # Custom labels for these breaks
+            labels = rev(c("0", "200", seq(500, 3500, by = 1000),"< 4500")),  # Custom labels for these breaks
+            # This is needed to expand the bar for bigger numbers (comment out for A, B6, C8)
+            guide = guide_colorbar(
+    barheight = unit(8, "cm")  # <- Increase only the color bar
+    # barwidth  = unit(0.4, "cm") # <- Optional: narrow bar if needed
+  )
       ) +
       # Remove space from plot to axis
       scale_x_continuous(expand = c(0, 0)) +
@@ -592,14 +597,14 @@ main_map <- ggplot() +
                    leg_pos = "right",
                    ax_tx_s = 9,
                    ax_tl_s = 12,
-                   leg_tl_s = 4,
-                   leg_tx_s = 2,
+                   # leg_tl_s = 5, # A4, B5,
+                   # leg_tx_s = 3, #A2,  B3,
                    hjust = 0.5
       ) +
       theme(
-            legend.key.height = unit(2, "line"),
+            # legend.key.height = unit(2, "line"),
             axis.ticks = element_line(),
-            legend.text = element_text(size = 8)
+            legend.text = element_text(size = 12) #A8 B10 C12
       ) +
       labs(
             x = "Longitude",
@@ -621,11 +626,10 @@ main_map <- ggplot() +
       )
 
 ggsave(
-      "./map_figure/jaime_map_revised.png",
+      "./map_figure/jaime_map_revised_c.png",
       main_map,
       width = 10,
       height = 6
-      
 )
 
 ```
