@@ -17,6 +17,8 @@ Jaime-Leigh Lue Chin^1^, Muriel Rabone^2^, Juliano Palacios-Abrantes^3^, Judith 
 
 *Corresponding author: Jaime-Leigh Lue Chin, jaimeleigh.edghill[at]my.uwi.edu
 
+Chin, J.-L. L., Rabone, M., Palacios-Abrantes, J., Gobin, J., Jute, A., Kanhai, L. D. K. and Amon, D. J., 2026. A baseline assessment of deep-sea biodiversity, and guide for future actions to inform stewardship, in Trinidad and Tobago. Discover Oceans, 3 (1), 18.
+
 # Files and folders organization
 
 ```         
