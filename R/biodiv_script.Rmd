@@ -250,3 +250,137 @@ ggsave("diversity_plots.png",
 
 ```
 
+# Species curvwe by depth boxes
+
+```{r}
+# spp_biodiv_df <- my_path("D", name = "spp_biodiversity_data.csv", read = T)
+
+
+sheet_url <- "https://docs.google.com/spreadsheets/d/1zDLZ5miZ0zkxt3uwPoNs-wWiTkUkr5bfBY41Hj-sqck/edit?usp=sharing"
+
+
+spp_biodiv_df <- read_sheet(sheet_url,
+                            sheet = "Species_624",
+                            col_types = "c"
+) %>%
+      janitor::clean_names() %>% 
+      dplyr::mutate(across(hassler_expedition:species_occurrence, ~ as.numeric(.x)))
+
+
+
+```
+
+## Explore depth boxes
+
+```{r}
+
+spp_biodiv_df %>% 
+      filter(!is.na(depth_boxes)) %>%
+      group_by(benthic_pelagic,depth_boxes) %>% 
+      summarise(n = n()) %>% 
+      #visualize boxes in each category
+      ggplot(aes(x = depth_boxes, y = n, fill = benthic_pelagic)) +
+      geom_col(position = "dodge") +
+      my_ggtheme_p(leg_pos = "right") +
+      xlab("Depth Boxes") +
+      ylab("Number of Sites") +
+      scale_fill_viridis_d() +
+      coord_flip() +
+      facet_wrap(~ benthic_pelagic, ncol = 2, scale = "free_y")
+
+ggsave("/results/depth_boxes_distribution.png",
+       last_plot(),
+       width = 5,
+       height = 10)
+
+
+```
+
+
+## Analysis by depth box
+
+```{r}
+
+names(spp_biodiv_df)
+
+# Transform analysis into function to run by benthic/pelagic group
+run_biodiv_analysis <- function(df_subset) {
+      
+       # Guard: skip empty subsets
+  if (nrow(df_subset) == 0) {
+    return(NULL)  # or a default tibble with NA/zero estimates
+  }
+      
+      community_matrix_pres <- df_subset %>%
+            pivot_longer(cols = hassler_expedition:rv_atlantis_at21_02, # Note these must include all columns on data
+                         names_to = "site", 
+                         values_to = "value") %>%
+            group_by(site, scientific_name) %>%
+            summarise(presence = ifelse(sum(value) > 0, 1, 0), .groups = "drop") %>%
+            reshape::cast(site ~ scientific_name, value = "presence")
+      
+      
+      community_matrix_pres[is.na(community_matrix_pres)] <- 0
+      
+      inc_freq <- as.incfreq(as.matrix(t(community_matrix_pres)))
+      
+      # Also guard very small matrices (e.g. 0 sites)
+  if (nrow(community_matrix_pres) == 0) {
+    return(NULL)
+  }
+      iNEXT(inc_freq, q = 0, datatype = "incidence_freq", nboot = 1, endpoint = 22) # As pointed out by reviewer 
+}
+
+
+# Split and run analysis by benthic/pelagic group
+results_list <- spp_biodiv_df %>%
+      group_by(depth_boxes) %>%
+      group_split() %>%
+      set_names(unique(spp_biodiv_df$depth_boxes)) %>%
+      map(run_biodiv_analysis) %>%  # or imap() to add error handling
+  keep(~ !is.null(.x))  # drop empty results
+
+# Extract size-based estimates and tag with group
+benthic_df <- as.data.frame(results_list$Benthic$iNextEst$size_based) %>%
+      mutate(Group = "Benthic")
+
+
+
+pelagic_df <- as.data.frame(results_list$Pelagic$iNextEst$size_based) %>%
+      mutate(Group = "Pelagic")
+
+# Combine both into one data frame
+Hills_q0_panel_df <- bind_rows(benthic_df, pelagic_df)
+
+
+bio_spp <-
+ggplot(Hills_q0_panel_df %>% filter(Method != "Observed")) +
+      geom_line(aes(x = t,
+                    y = qD,
+                    color = Method,
+                    lty = Group),
+                # col = "coral2",
+                cex = 1) +
+      geom_point(data = Hills_q0_panel_df %>% filter(Method == "Observed"),
+                 aes(x = t,
+                     y = qD,
+                     color = Method),
+                 # col = "coral2",
+                 cex = 2) +
+      facet_wrap(~ Group, scales = "free", ncol = 2) +
+      scale_color_viridis_d() +
+      # xlab("") +
+      xlab("Number of Sampling Units") +
+      ylab("Species Diversity") +
+      my_ggtheme_p(leg_pos = "right") +
+      scale_y_continuous(breaks = seq(0, 500, 50)) +
+      scale_x_continuous(breaks = seq(0, 22, 2)) +
+      scale_linetype_manual(values = c("twodash", "solid"))
+
+
+ggsave(bio_spp,
+       filename = "benthic_pelagic_diversity.png",
+       width = 9,
+       height = 7)
+
+```
